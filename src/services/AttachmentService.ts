@@ -1,0 +1,71 @@
+import fs from 'fs';
+import path from 'path';
+import crypto from 'crypto';
+import { BadRequestError } from '../errors/HttpError';
+import type { AttachmentResponse } from '../dtos/attachment.dto';
+
+const UPLOAD_ROOT = path.resolve(process.cwd(), 'uploads');
+const SUBDIR_IMAGES = 'images';
+const SUBDIR_FILES = 'files';
+
+const MIME_EXT: Record<string, string> = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/gif': '.gif',
+  'image/webp': '.webp',
+  'image/svg+xml': '.svg',
+  'image/bmp': '.bmp',
+  'image/tiff': '.tiff',
+  'image/heic': '.heic',
+  'image/heif': '.heif',
+  'image/avif': '.avif',
+  'application/pdf': '.pdf',
+};
+
+function ensureDir(p: string): void {
+  fs.mkdirSync(p, { recursive: true });
+}
+
+function chooseExt(file: Express.Multer.File): string {
+  const known = MIME_EXT[file.mimetype.toLowerCase()];
+  if (known) return known;
+  const orig = path.extname(file.originalname).toLowerCase();
+  return orig || '.bin';
+}
+
+export class AttachmentService {
+  constructor(private readonly uploadRoot = UPLOAD_ROOT) {
+    ensureDir(this.uploadRoot);
+    ensureDir(path.join(this.uploadRoot, SUBDIR_IMAGES));
+    ensureDir(path.join(this.uploadRoot, SUBDIR_FILES));
+  }
+
+  saveImage(
+    file: Express.Multer.File | undefined,
+    baseUrl: string,
+  ): AttachmentResponse {
+    return this.save(file, SUBDIR_IMAGES, baseUrl);
+  }
+
+  saveFile(
+    file: Express.Multer.File | undefined,
+    baseUrl: string,
+  ): AttachmentResponse {
+    return this.save(file, SUBDIR_FILES, baseUrl);
+  }
+
+  private save(
+    file: Express.Multer.File | undefined,
+    subdir: string,
+    baseUrl: string,
+  ): AttachmentResponse {
+    if (!file) {
+      throw new BadRequestError('Missing "file" in multipart form');
+    }
+    const ext = chooseExt(file);
+    const filename = `${crypto.randomUUID()}${ext}`;
+    const fullPath = path.join(this.uploadRoot, subdir, filename);
+    fs.writeFileSync(fullPath, file.buffer);
+    return { url: `${baseUrl}/static/uploads/${subdir}/${filename}` };
+  }
+}

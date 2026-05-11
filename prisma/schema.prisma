@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String   @id @default(cuid())
+  googleSub       String   @unique
+  email           String   @unique
+  name            String
+  nickname        String?
+  profileImageUrl String?
+  instrument      String?
+  onboardingCompleted Boolean @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  revokedTokens   RevokedToken[]
+  bandMemberships BandMember[]
+  messages        Message[]
+}
+
+model RevokedToken {
+  jti       String   @id
+  userId    String
+  expiresAt DateTime
+  revokedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+}
+
+model Band {
+  id          String   @id @default(cuid())
+  name        String
+  genre       String?
+  description String?
+  iconUrl     String?
+  inviteCode  String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members  BandMember[]
+  events   Event[]
+  messages Message[]
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  bandId    String
+  senderId  String
+  text      String
+  createdAt DateTime @default(now())
+
+  band   Band @relation(fields: [bandId], references: [id], onDelete: Cascade)
+  sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([bandId, createdAt])
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  bandId      String
+  title       String
+  date        String
+  type        String
+  description String?
+  setlist     Json     @default("[]")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  band Band @relation(fields: [bandId], references: [id], onDelete: Cascade)
+
+  @@index([bandId, date])
+}
+
+model BandMember {
+  bandId     String
+  userId     String
+  role       String   @default("member")
+  instrument String?
+  joinedAt   DateTime @default(now())
+
+  band Band @relation(fields: [bandId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([bandId, userId])
+  @@index([userId])
+}

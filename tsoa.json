@@ -1,0 +1,22 @@
+{
+  "entryFile": "src/app.ts",
+  "noImplicitAdditionalProperties": "throw-on-extras",
+  "controllerPathGlobs": ["src/controllers/**/*.ts"],
+  "spec": {
+    "outputDirectory": "src/routes",
+    "specVersion": 3,
+    "securityDefinitions": {
+      "jwt": {
+        "type": "apiKey",
+        "name": "Authorization",
+        "in": "header",
+        "description": "Bearer JWT issued by POST /auth/google"
+      }
+    }
+  },
+  "routes": {
+    "routesDir": "src/routes",
+    "middleware": "express",
+    "authenticationModule": "src/middlewares/auth.ts"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter analyze:*)",
+      "Bash(flutter pub:*)",
+      "Bash(dart analyze:*)",
+      "Edit(/.claude/skills/review-flutter/**)",
+      "Edit(/.claude/skills/update-docs/**)"
+    ],
+    "additionalDirectories": [
+      "c:\\MyBand_FE\\.claude\\skills"
+    ]
+  }
+}

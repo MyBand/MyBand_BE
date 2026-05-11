@@ -1,0 +1,50 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(npm install *)",
+      "Bash(cp .env.example .env)",
+      "Bash(npx prisma *)",
+      "Bash(npx tsoa *)",
+      "Bash(npx tsc *)",
+      "Bash(npx ts-node-dev *)",
+      "Bash(curl -s http://localhost:3000/health)",
+      "Bash(curl -s -o /dev/null -w \"docs HTTP %{http_code}\\\\n\" http://localhost:3000/docs/)",
+      "Bash(curl -s -X POST http://localhost:3000/users -H \"Content-Type: application/json\" -d '{\"email\":\"brian@example.com\",\"name\":\"Brian\"}')",
+      "Bash(curl -s http://localhost:3000/users)",
+      "Bash(curl -s http://localhost:3000/users/1)",
+      "Bash(curl -sS -m 5 -o /dev/null -w \"health=%{http_code}\\\\n\" http://localhost:3000/health)",
+      "Bash(curl -sS -m 5 -o /dev/null -w \"swagger=%{http_code}\\\\n\" http://localhost:3000/docs/)",
+      "Bash(curl -sS -m 5 -o /dev/null -w \"users-me-no-auth=%{http_code}\\\\n\" http://localhost:3000/users/me)",
+      "Bash(curl -sS -m 5 -o /dev/null -w \"auth-me-no-auth=%{http_code}\\\\n\" http://localhost:3000/auth/me)",
+      "Bash(curl -sS -m 5 -o /dev/null -w \"auth-google-empty=%{http_code}\\\\n\" -X POST -H \"Content-Type: application/json\" -d '{}' http://localhost:3000/auth/google)",
+      "Bash(curl -sS -m 5 -o /dev/null -w \"auth-google-bad-token=%{http_code}\\\\n\" -X POST -H \"Content-Type: application/json\" -d '{\"idToken\":\"not-a-real-token\"}' http://localhost:3000/auth/google)",
+      "Bash(npx ts-node *)",
+      "Bash(curl -sS -m 5 -w '\\\\n[%{http_code}]\\\\n' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW9weTBtdmQwMDAwdXBzY2x5aDJkaWgzIiwiaWF0IjoxNzc3ODIzMTc3LCJleHAiOjE3Nzc4MjY3NzcsImp0aSI6IjFjYjEwMmFiLTQyMjYtNDEyZS1iOGUxLWUyZGUwYzVkOWQ5OCJ9.qGq76xG2-a42IJERpOFDuAZoRGJYGVbDkHCj7Cj3OYQ' http://localhost:3000/users/me)",
+      "Bash(curl -sS -m 5 -w '\\\\n[%{http_code}]\\\\n' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW9weTBtdmQwMDAwdXBzY2x5aDJkaWgzIiwiaWF0IjoxNzc3ODIzMTc3LCJleHAiOjE3Nzc4MjY3NzcsImp0aSI6IjFjYjEwMmFiLTQyMjYtNDEyZS1iOGUxLWUyZGUwYzVkOWQ5OCJ9.qGq76xG2-a42IJERpOFDuAZoRGJYGVbDkHCj7Cj3OYQ' http://localhost:3000/auth/me)",
+      "Bash(curl -sS -m 5 -w '\\\\n[%{http_code}]\\\\n' -X PATCH -H 'Content-Type: application/json' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW9weTBtdmQwMDAwdXBzY2x5aDJkaWgzIiwiaWF0IjoxNzc3ODIzMTc3LCJleHAiOjE3Nzc4MjY3NzcsImp0aSI6IjFjYjEwMmFiLTQyMjYtNDEyZS1iOGUxLWUyZGUwYzVkOWQ5OCJ9.qGq76xG2-a42IJERpOFDuAZoRGJYGVbDkHCj7Cj3OYQ' -d '{\"instrument\":\"Bass\",\"profileImageUrl\":\"https://example.com/p.jpg\"}' http://localhost:3000/users/me)",
+      "Bash(curl -sS -m 5 -w '\\\\n[%{http_code}]\\\\n' -X POST -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW9weTBtdmQwMDAwdXBzY2x5aDJkaWgzIiwiaWF0IjoxNzc3ODIzMTc3LCJleHAiOjE3Nzc4MjY3NzcsImp0aSI6IjFjYjEwMmFiLTQyMjYtNDEyZS1iOGUxLWUyZGUwYzVkOWQ5OCJ9.qGq76xG2-a42IJERpOFDuAZoRGJYGVbDkHCj7Cj3OYQ' http://localhost:3000/auth/logout)",
+      "Bash(tasklist)",
+      "Bash(wmic process *)",
+      "PowerShell(Get-CimInstance Win32_Process -Filter \"Name='node.exe'\")",
+      "PowerShell(Stop-Process -Id 38076,38820,36636 -Force -ErrorAction SilentlyContinue)",
+      "Bash(npm run *)",
+      "Bash(echo \"started bg pid=$!\")",
+      "Bash(curl -sS -m 2 -o /dev/null http://localhost:3000/health)",
+      "PowerShell(Stop-Process -Force)",
+      "Bash(disown)",
+      "PowerShell($p = Get-Process -Name node -ErrorAction SilentlyContinue; if \\($p\\) { $p | Stop-Process -Force; Write-Output \"killed $\\($p.Count\\) node process\\(es\\)\" } else { Write-Output \"no node processes\" })",
+      "PowerShell($p = Get-Process -Name node -ErrorAction SilentlyContinue; if \\($p\\) { $p | Stop-Process -Force; \"killed $\\($p.Count\\)\" } else { \"no node\" })",
+      "Bash(curl -sS -m 5 -w \"\\\\n[%{http_code}]\\\\n\" http://localhost:3000/health)",
+      "Bash(curl -sS -m 5 -w \"\\\\n[%{http_code}]\\\\n\" http://localhost:3000/users/me)",
+      "Bash(curl -sS -m 5 -w \"\\\\n[%{http_code}]\\\\n\" -X POST -H \"Content-Type: application/json\" -d '{}' http://localhost:3000/auth/google)",
+      "Bash(curl -sS -m 5 -w \"\\\\n[%{http_code}]\\\\n\" -X POST -H \"Content-Type: application/json\" -d '{\"idToken\":\"fake\"}' http://localhost:3000/auth/google)",
+      "Bash(curl -sS -m 5 -w \"\\\\n[%{http_code}]\\\\n\" -X POST -H \"Content-Type: application/json\" -d '{\"accessToken\":\"fake\"}' http://localhost:3000/auth/google)"
+    ],
+    "additionalDirectories": [
+      "\\tmp"
+    ]
+  }
+}

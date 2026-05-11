@@ -1,0 +1,27 @@
+services:
+  app:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      # file:./app.db → resolveSqliteUrl → /app/prisma/app.db (inside db_data volume)
+      DATABASE_URL: "file:./app.db"
+      GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID}"
+      JWT_SECRET: "${JWT_SECRET}"
+      JWT_EXPIRES_IN: "${JWT_EXPIRES_IN:-7d}"
+    volumes:
+      - db_data:/app/prisma
+      - uploads_data:/app/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  db_data:
+  uploads_data:
