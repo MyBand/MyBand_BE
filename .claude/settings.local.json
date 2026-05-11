@@ -41,7 +41,8 @@
       "Bash(curl -sS -m 5 -w \"\\\\n[%{http_code}]\\\\n\" http://localhost:3000/users/me)",
       "Bash(curl -sS -m 5 -w \"\\\\n[%{http_code}]\\\\n\" -X POST -H \"Content-Type: application/json\" -d '{}' http://localhost:3000/auth/google)",
       "Bash(curl -sS -m 5 -w \"\\\\n[%{http_code}]\\\\n\" -X POST -H \"Content-Type: application/json\" -d '{\"idToken\":\"fake\"}' http://localhost:3000/auth/google)",
-      "Bash(curl -sS -m 5 -w \"\\\\n[%{http_code}]\\\\n\" -X POST -H \"Content-Type: application/json\" -d '{\"accessToken\":\"fake\"}' http://localhost:3000/auth/google)"
+      "Bash(curl -sS -m 5 -w \"\\\\n[%{http_code}]\\\\n\" -X POST -H \"Content-Type: application/json\" -d '{\"accessToken\":\"fake\"}' http://localhost:3000/auth/google)",
+      "Bash(curl -sS -m 10 -w \"\\\\nHTTP %{http_code} | %{time_total}s\" http://210.126.35.58:3000/health)"
     ],
     "additionalDirectories": [
       "\\tmp"
