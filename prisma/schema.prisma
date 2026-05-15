@@ -55,6 +55,7 @@ model Message {
   bandId    String
   senderId  String
   text      String
+  attachments Json   @default("[]")
   createdAt DateTime @default(now())
 
   band   Band @relation(fields: [bandId], references: [id], onDelete: Cascade)
@@ -85,10 +86,12 @@ model BandMember {
   role       String   @default("member")
   instrument String?
   joinedAt   DateTime @default(now())
+  leftAt     DateTime?
 
   band Band @relation(fields: [bandId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([bandId, userId])
   @@index([userId])
+  @@index([bandId, leftAt])
 }

@@ -27,7 +27,7 @@ export interface VerifiedToken {
   expiresAt: Date;
 }
 
-const googleClient = new OAuth2Client(env.GOOGLE_CLIENT_ID);
+const googleClient = new OAuth2Client();
 
 export class AuthService {
   constructor(
@@ -96,7 +96,7 @@ export class AuthService {
     try {
       const ticket = await googleClient.verifyIdToken({
         idToken,
-        audience: env.GOOGLE_CLIENT_ID,
+        audience: env.GOOGLE_CLIENT_IDS,
       });
       payload = ticket.getPayload();
     } catch {

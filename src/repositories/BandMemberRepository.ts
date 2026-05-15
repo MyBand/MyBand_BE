@@ -21,9 +21,16 @@ export class BandMemberRepository {
     });
   }
 
+  findActiveByBandAndUser(bandId: string, userId: string) {
+    return prisma.bandMember.findFirst({
+      where: { bandId, userId, leftAt: null },
+      include: { user: true },
+    });
+  }
+
   findByBand(bandId: string) {
     return prisma.bandMember.findMany({
-      where: { bandId },
+      where: { bandId, leftAt: null },
       orderBy: [{ role: 'asc' }, { joinedAt: 'asc' }],
       include: { user: true },
     });
@@ -31,13 +38,25 @@ export class BandMemberRepository {
 
   countOwners(bandId: string): Promise<number> {
     return prisma.bandMember.count({
-      where: { bandId, role: 'owner' },
+      where: { bandId, role: 'owner', leftAt: null },
     });
   }
 
   create(input: CreateBandMemberInput) {
     return prisma.bandMember.create({
       data: input,
+      include: { user: true },
+    });
+  }
+
+  restore(input: CreateBandMemberInput) {
+    return prisma.bandMember.update({
+      where: { bandId_userId: { bandId: input.bandId, userId: input.userId } },
+      data: {
+        role: input.role,
+        instrument: input.instrument ?? null,
+        leftAt: null,
+      },
       include: { user: true },
     });
   }
@@ -51,8 +70,9 @@ export class BandMemberRepository {
   }
 
   delete(bandId: string, userId: string) {
-    return prisma.bandMember.delete({
+    return prisma.bandMember.update({
       where: { bandId_userId: { bandId, userId } },
+      data: { leftAt: new Date() },
     });
   }
 }

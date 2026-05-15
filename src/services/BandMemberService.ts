@@ -18,6 +18,7 @@ type MemberRow = {
   userId: string;
   role: string;
   instrument: string | null;
+  leftAt: Date | null;
   user: {
     id: string;
     name: string;
@@ -38,7 +39,7 @@ export class BandMemberService {
   async assertMember(bandId: string, userId: string): Promise<MemberRow> {
     const band = await this.bands.findById(bandId);
     if (!band) throw new NotFoundError(`Band ${bandId} not found`);
-    const membership = await this.members.findByBandAndUser(bandId, userId);
+    const membership = await this.members.findActiveByBandAndUser(bandId, userId);
     if (!membership) {
       throw new ForbiddenError('Not a member of this band');
     }
@@ -77,16 +78,17 @@ export class BandMemberService {
     }
 
     const existing = await this.members.findByBandAndUser(bandId, invitee.id);
-    if (existing) {
+    if (existing?.leftAt === null) {
       throw new ConflictError('User is already a member of this band');
     }
 
-    const created = await this.members.create({
+    const input = {
       bandId,
       userId: invitee.id,
       role: 'member',
       instrument: body.instrument ?? null,
-    });
+    } as const;
+    const created = existing ? await this.members.restore(input) : await this.members.create(input);
     return toResponse(created as MemberRow);
   }
 
@@ -96,7 +98,7 @@ export class BandMemberService {
     requesterId: string,
     body: UpdateBandMemberRequest,
   ): Promise<BandMemberResponse> {
-    const target = await this.members.findByBandAndUser(bandId, targetUserId);
+    const target = await this.members.findActiveByBandAndUser(bandId, targetUserId);
     if (!target) {
       throw new NotFoundError(`Member ${targetUserId} not in band ${bandId}`);
     }
@@ -131,7 +133,7 @@ export class BandMemberService {
     targetUserId: string,
     requesterId: string,
   ): Promise<void> {
-    const target = await this.members.findByBandAndUser(bandId, targetUserId);
+    const target = await this.members.findActiveByBandAndUser(bandId, targetUserId);
     if (!target) {
       throw new NotFoundError(`Member ${targetUserId} not in band ${bandId}`);
     }

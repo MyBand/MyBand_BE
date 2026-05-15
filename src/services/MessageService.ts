@@ -1,7 +1,10 @@
 import { MessageRepository } from '../repositories/MessageRepository';
 import { BandMemberService } from './BandMemberService';
 import { chatHub } from '../ws/chatHub';
+import { BadRequestError } from '../errors/HttpError';
+import type { Prisma } from '@prisma/client';
 import type {
+  MessageAttachment,
   MessageListResponse,
   MessageResponse,
   SendMessageRequest,
@@ -15,6 +18,7 @@ type MessageRow = {
   bandId: string;
   senderId: string;
   text: string;
+  attachments: unknown;
   createdAt: Date;
   sender: {
     id: string;
@@ -55,15 +59,32 @@ export class MessageService {
     body: SendMessageRequest,
   ): Promise<MessageResponse> {
     await this.memberService.assertMember(bandId, senderId);
+    const text = body.text?.trim() ?? '';
+    const attachments = normalizeAttachments(body.attachments);
+    if (!text && attachments.length === 0) {
+      throw new BadRequestError('Message text or attachment is required');
+    }
     const created = await this.messages.create({
       bandId,
       senderId,
-      text: body.text,
+      text,
+      attachments: attachments as unknown as Prisma.InputJsonValue,
     });
     const response = toResponse(created as MessageRow);
     chatHub.publish(bandId, response);
     return response;
   }
+}
+
+function normalizeAttachments(input: MessageAttachment[] | undefined): MessageAttachment[] {
+  if (!input) return [];
+  return input
+    .filter((item) => item.url && item.filename && (item.type === 'image' || item.type === 'pdf'))
+    .map((item) => ({
+      type: item.type,
+      url: item.url,
+      filename: item.filename,
+    }));
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -77,6 +98,9 @@ function toResponse(row: MessageRow): MessageResponse {
     senderName: row.sender.nickname ?? row.sender.name,
     senderProfileImageUrl: row.sender.profileImageUrl,
     text: row.text,
+    attachments: Array.isArray(row.attachments)
+      ? (row.attachments as MessageAttachment[])
+      : [],
     createdAt: row.createdAt.toISOString(),
   };
 }

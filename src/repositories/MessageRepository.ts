@@ -1,9 +1,11 @@
 import { prisma } from '../utils/prisma';
+import type { Prisma } from '@prisma/client';
 
 export interface CreateMessageInput {
   bandId: string;
   senderId: string;
   text: string;
+  attachments?: Prisma.InputJsonValue;
 }
 
 export interface ListMessagesOptions {

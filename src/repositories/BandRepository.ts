@@ -16,13 +16,13 @@ export interface UpdateBandInput {
 }
 
 const withMemberCount = {
-  _count: { select: { members: true } },
+  _count: { select: { members: { where: { leftAt: null } } } },
 } as const;
 
 export class BandRepository {
   findByUserId(userId: string) {
     return prisma.band.findMany({
-      where: { members: { some: { userId } } },
+      where: { members: { some: { userId, leftAt: null } } },
       orderBy: { createdAt: 'desc' },
       include: withMemberCount,
     });

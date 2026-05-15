@@ -56,14 +56,21 @@ export class BandService {
     if (!band) throw new NotFoundError('Invalid band invite code');
 
     const existing = await this.members.findByBandAndUser(band.id, requesterId);
-    if (existing) throw new ConflictError('User is already a member of this band');
+    if (existing?.leftAt === null) {
+      throw new ConflictError('User is already a member of this band');
+    }
 
-    await this.members.create({
+    const memberInput = {
       bandId: band.id,
       userId: requesterId,
       role: 'member',
       instrument: input.instrument ?? null,
-    });
+    } as const;
+    if (existing) {
+      await this.members.restore(memberInput);
+    } else {
+      await this.members.create(memberInput);
+    }
 
     const joined = await this.bands.findById(band.id);
     if (!joined) throw new NotFoundError(`Band ${band.id} not found`);

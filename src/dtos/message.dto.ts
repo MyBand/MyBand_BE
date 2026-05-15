@@ -1,9 +1,18 @@
+export type MessageAttachmentType = 'image' | 'pdf';
+
+export interface MessageAttachment {
+  type: MessageAttachmentType;
+  url: string;
+  filename: string;
+}
+
 export interface MessageResponse {
   id: string;
   senderId: string;
   senderName: string;
   senderProfileImageUrl: string | null;
   text: string;
+  attachments: MessageAttachment[];
   createdAt: string;
 }
 
@@ -13,5 +22,6 @@ export interface MessageListResponse {
 }
 
 export interface SendMessageRequest {
-  text: string;
+  text?: string;
+  attachments?: MessageAttachment[];
 }
