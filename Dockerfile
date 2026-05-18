@@ -36,10 +36,11 @@ COPY --from=builder /app/node_modules/.bin/prisma   ./node_modules/.bin/prisma
 
 COPY --from=builder /app/dist ./dist
 COPY prisma ./prisma
+COPY prisma ./prisma-image
 
 # Non-root user + volume mount points
 RUN addgroup -S app && adduser -S app -G app \
-    && mkdir -p uploads prisma \
+    && mkdir -p uploads prisma prisma-image \
     && chown -R app:app /app
 
 COPY --chown=app:app entrypoint.sh ./

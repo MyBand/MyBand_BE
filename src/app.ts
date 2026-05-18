@@ -15,6 +15,7 @@ app.use(cors({
   origin: [
     'http://localhost:5000',   // Flutter web 개발 서버
     'http://localhost:3000',   // 필요 시
+    process.env.FRONTEND_URL ?? '' // 운영 프론트엔드 URL
   ],
   methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],

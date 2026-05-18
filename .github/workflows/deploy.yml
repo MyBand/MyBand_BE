@@ -1,0 +1,198 @@
+name: Deploy backend
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: production-backend
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to home server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Configure SSH
+        env:
+          HOME_SERVER_HOST: ${{ secrets.HOME_SERVER_HOST }}
+          HOME_SERVER_PORT: ${{ secrets.HOME_SERVER_PORT }}
+          HOME_SERVER_SSH_KEY: ${{ secrets.HOME_SERVER_SSH_KEY }}
+        run: |
+          set -euo pipefail
+
+          : "${HOME_SERVER_HOST:?HOME_SERVER_HOST secret is required}"
+          : "${HOME_SERVER_SSH_KEY:?HOME_SERVER_SSH_KEY secret is required}"
+
+          SSH_PORT="${HOME_SERVER_PORT:-22}"
+          mkdir -p ~/.ssh
+          printf '%s\n' "$HOME_SERVER_SSH_KEY" > ~/.ssh/home_server_key
+          chmod 600 ~/.ssh/home_server_key
+          ssh-keyscan -p "$SSH_PORT" "$HOME_SERVER_HOST" >> ~/.ssh/known_hosts
+
+      - name: Create deployment env file
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+          GOOGLE_ANDROID_CLIENT_ID: ${{ secrets.GOOGLE_ANDROID_CLIENT_ID }}
+          GOOGLE_IOS_CLIENT_ID: ${{ secrets.GOOGLE_IOS_CLIENT_ID }}
+          GOOGLE_CLIENT_IDS: ${{ secrets.GOOGLE_CLIENT_IDS }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_EXPIRES_IN: ${{ secrets.JWT_EXPIRES_IN }}
+          FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+        run: |
+          set -euo pipefail
+
+          : "${GOOGLE_CLIENT_ID:?GOOGLE_CLIENT_ID secret is required}"
+          : "${JWT_SECRET:?JWT_SECRET secret is required}"
+
+          dotenv_escape() {
+            printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+          }
+
+          {
+            printf 'DATABASE_URL="%s"\n' "$(dotenv_escape "${DATABASE_URL:-file:./app.db}")"
+            printf 'GOOGLE_CLIENT_ID="%s"\n' "$(dotenv_escape "$GOOGLE_CLIENT_ID")"
+            printf 'GOOGLE_WEB_CLIENT_ID="%s"\n' "$(dotenv_escape "${GOOGLE_WEB_CLIENT_ID:-}")"
+            printf 'GOOGLE_ANDROID_CLIENT_ID="%s"\n' "$(dotenv_escape "${GOOGLE_ANDROID_CLIENT_ID:-}")"
+            printf 'GOOGLE_IOS_CLIENT_ID="%s"\n' "$(dotenv_escape "${GOOGLE_IOS_CLIENT_ID:-}")"
+            printf 'GOOGLE_CLIENT_IDS="%s"\n' "$(dotenv_escape "${GOOGLE_CLIENT_IDS:-}")"
+            printf 'JWT_SECRET="%s"\n' "$(dotenv_escape "$JWT_SECRET")"
+            printf 'JWT_EXPIRES_IN="%s"\n' "$(dotenv_escape "${JWT_EXPIRES_IN:-7d}")"
+            printf 'FRONTEND_URL="%s"\n' "$(dotenv_escape "${FRONTEND_URL:-}")"
+          } > .deploy.env
+
+      - name: Sync files to home server
+        env:
+          HOME_SERVER_HOST: ${{ secrets.HOME_SERVER_HOST }}
+          HOME_SERVER_PORT: ${{ secrets.HOME_SERVER_PORT }}
+          HOME_SERVER_USER: ${{ secrets.HOME_SERVER_USER }}
+          HOME_SERVER_PATH: ${{ secrets.HOME_SERVER_PATH }}
+        run: |
+          set -euo pipefail
+
+          : "${HOME_SERVER_HOST:?HOME_SERVER_HOST secret is required}"
+          : "${HOME_SERVER_USER:?HOME_SERVER_USER secret is required}"
+          : "${HOME_SERVER_PATH:?HOME_SERVER_PATH secret is required}"
+
+          SSH_PORT="${HOME_SERVER_PORT:-22}"
+          SSH_TARGET="${HOME_SERVER_USER}@${HOME_SERVER_HOST}"
+          SSH_OPTS="-i ~/.ssh/home_server_key -p ${SSH_PORT}"
+
+          ssh $SSH_OPTS "$SSH_TARGET" "mkdir -p '$HOME_SERVER_PATH'"
+          rsync -az \
+            -e "ssh $SSH_OPTS" \
+            --exclude '.git' \
+            --exclude '.env' \
+            --exclude '.deploy.env' \
+            --exclude 'node_modules' \
+            --exclude 'dist' \
+            --exclude 'uploads' \
+            --exclude 'prisma/*.db' \
+            --exclude 'prisma/*.db-journal' \
+            --exclude 'config/ssl' \
+            ./ "$SSH_TARGET:$HOME_SERVER_PATH/"
+          scp $SSH_OPTS .deploy.env "$SSH_TARGET:$HOME_SERVER_PATH/.env"
+
+      - name: Deploy with Docker Compose
+        env:
+          HOME_SERVER_HOST: ${{ secrets.HOME_SERVER_HOST }}
+          HOME_SERVER_PORT: ${{ secrets.HOME_SERVER_PORT }}
+          HOME_SERVER_USER: ${{ secrets.HOME_SERVER_USER }}
+          HOME_SERVER_PATH: ${{ secrets.HOME_SERVER_PATH }}
+        run: |
+          set -euo pipefail
+
+          : "${HOME_SERVER_HOST:?HOME_SERVER_HOST secret is required}"
+          : "${HOME_SERVER_USER:?HOME_SERVER_USER secret is required}"
+          : "${HOME_SERVER_PATH:?HOME_SERVER_PATH secret is required}"
+
+          SSH_PORT="${HOME_SERVER_PORT:-22}"
+          SSH_TARGET="${HOME_SERVER_USER}@${HOME_SERVER_HOST}"
+          SSH_OPTS="-i ~/.ssh/home_server_key -p ${SSH_PORT}"
+
+          ssh $SSH_OPTS "$SSH_TARGET" "DEPLOY_PATH='$HOME_SERVER_PATH' bash -s" <<'REMOTE'
+          set -euo pipefail
+
+          cd "$DEPLOY_PATH"
+          docker compose pull nginx
+          docker compose up -d --build --remove-orphans
+
+          deadline=$((SECONDS + 240))
+          services="$(docker compose config --services)"
+
+          while true; do
+            all_healthy=true
+
+            for service in $services; do
+              container_id="$(docker compose ps -q "$service")"
+
+              if [ -z "$container_id" ]; then
+                echo "Service $service has no container."
+                all_healthy=false
+                continue
+              fi
+
+              running="$(docker inspect -f '{{.State.Running}}' "$container_id")"
+              health="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}missing{{end}}' "$container_id")"
+
+              echo "$service: running=$running health=$health"
+
+              if [ "$running" != "true" ]; then
+                echo "Service $service is not running."
+                docker compose logs --tail=80 "$service"
+                exit 1
+              fi
+
+              if [ "$health" = "unhealthy" ]; then
+                echo "Service $service is unhealthy."
+                docker compose logs --tail=80 "$service"
+                exit 1
+              fi
+
+              if [ "$health" != "healthy" ]; then
+                all_healthy=false
+              fi
+            done
+
+            if [ "$all_healthy" = "true" ]; then
+              echo "All containers are healthy."
+              docker compose ps
+              break
+            fi
+
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              echo "Timed out waiting for containers to become healthy."
+              docker compose ps
+              docker compose logs --tail=120
+              exit 1
+            fi
+
+            sleep 5
+          done
+          REMOTE
+
+      - name: Cleanup deployment env file
+        if: always()
+        run: rm -f .deploy.env
