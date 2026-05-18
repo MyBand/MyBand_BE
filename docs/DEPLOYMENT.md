@@ -31,6 +31,7 @@
 - `GOOGLE_ANDROID_CLIENT_ID`
 - `GOOGLE_IOS_CLIENT_ID`
 - `GOOGLE_CLIENT_IDS`
+- `FRONTEND_URLS`: comma-separated additional frontend origins
 - `JWT_EXPIRES_IN`: 비워두면 `7d`
 
 ## Server Notes

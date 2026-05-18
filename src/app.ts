@@ -11,18 +11,32 @@ import cors from 'cors';
 
 export const app = express();
 
+const corsOrigins = new Set(
+  [
+    'http://localhost:5000',
+    'http://localhost:3000',
+    'http://myband-host.s3-website.ap-northeast-2.amazonaws.com',
+    process.env.FRONTEND_URL,
+    ...(process.env.FRONTEND_URLS ?? '').split(','),
+  ]
+    .map((origin) => origin?.trim())
+    .filter((origin): origin is string => Boolean(origin)),
+);
+
 app.use(cors({
-  origin: [
-    'http://localhost:5000',   // Flutter web 개발 서버
-    'http://localhost:3000',   // 필요 시
-    process.env.FRONTEND_URL ?? '' // 운영 프론트엔드 URL
-  ],
+  origin: (origin, callback) => {
+    if (!origin || corsOrigins.has(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error(`CORS origin not allowed: ${origin}`));
+  },
   methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 }));
 
-// OPTIONS preflight 요청이 404로 처리되지 않도록 강제 성공 응답 반환
+// Keep preflight requests from falling through to 404 routes.
 app.use((req, res, next) => {
   if (req.method === 'OPTIONS') {
     res.status(200).end();

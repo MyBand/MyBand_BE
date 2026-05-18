@@ -15,6 +15,8 @@ services:
       GOOGLE_CLIENT_IDS: "${GOOGLE_CLIENT_IDS:-}"
       JWT_SECRET: "${JWT_SECRET}"
       JWT_EXPIRES_IN: "${JWT_EXPIRES_IN:-7d}"
+      FRONTEND_URL: "${FRONTEND_URL:-}"
+      FRONTEND_URLS: "${FRONTEND_URLS:-}"
     volumes:
       - db_data:/app/prisma
       - uploads_data:/app/uploads
@@ -37,9 +39,11 @@ services:
     depends_on:
       app:
         condition: service_healthy
+    environment:
+      NGINX_ENTRYPOINT_QUIET_LOGS: "1"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost/nginx-health"]
+      test: ["CMD", "nginx", "-t"]
       interval: 30s
       timeout: 5s
       retries: 3

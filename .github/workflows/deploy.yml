@@ -61,6 +61,7 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           JWT_EXPIRES_IN: ${{ secrets.JWT_EXPIRES_IN }}
           FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+          FRONTEND_URLS: ${{ secrets.FRONTEND_URLS }}
         run: |
           set -euo pipefail
 
@@ -81,6 +82,7 @@ jobs:
             printf 'JWT_SECRET="%s"\n' "$(dotenv_escape "$JWT_SECRET")"
             printf 'JWT_EXPIRES_IN="%s"\n' "$(dotenv_escape "${JWT_EXPIRES_IN:-7d}")"
             printf 'FRONTEND_URL="%s"\n' "$(dotenv_escape "${FRONTEND_URL:-}")"
+            printf 'FRONTEND_URLS="%s"\n' "$(dotenv_escape "${FRONTEND_URLS:-}")"
           } > .deploy.env
 
       - name: Sync files to home server
