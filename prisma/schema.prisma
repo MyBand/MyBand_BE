@@ -22,6 +22,7 @@ model User {
   revokedTokens   RevokedToken[]
   bandMemberships BandMember[]
   messages        Message[]
+  attachments     Attachment[]
 }
 
 model RevokedToken {
@@ -94,4 +95,16 @@ model BandMember {
   @@id([bandId, userId])
   @@index([userId])
   @@index([bandId, leftAt])
+}
+
+model Attachment {
+  id         String   @id @default(cuid())
+  bandId     String?
+  uploaderId String
+  subdir     String
+  filename   String
+  mimeType   String
+  createdAt  DateTime @default(now())
+
+  uploader User @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
 }
