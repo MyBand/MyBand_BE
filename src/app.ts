@@ -11,11 +11,12 @@ import cors from 'cors';
 
 export const app = express();
 
+app.set('trust proxy', 1);
+
 const corsOrigins = new Set(
   [
     'http://localhost:5000',
     'http://localhost:3000',
-    'http://myband-host.s3-website.ap-northeast-2.amazonaws.com',
     process.env.FRONTEND_URL,
     ...(process.env.FRONTEND_URLS ?? '').split(','),
   ]
