@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { BandRepository } from '../repositories/BandRepository';
 import { BandMemberRepository } from '../repositories/BandMemberRepository';
 import { BandMemberService } from './BandMemberService';
@@ -136,9 +137,10 @@ function normalizeInviteCode(code: string): string {
 
 function generateInviteCode(): string {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const bytes = crypto.randomBytes(8);
   let out = '';
   for (let i = 0; i < 8; i += 1) {
-    out += alphabet[Math.floor(Math.random() * alphabet.length)];
+    out += alphabet[bytes[i] % alphabet.length];
   }
   return out;
 }
