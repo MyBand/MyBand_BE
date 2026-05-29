@@ -13,7 +13,6 @@ const MIME_EXT: Record<string, string> = {
   'image/png': '.png',
   'image/gif': '.gif',
   'image/webp': '.webp',
-  'image/svg+xml': '.svg',
   'image/bmp': '.bmp',
   'image/tiff': '.tiff',
   'image/heic': '.heic',
