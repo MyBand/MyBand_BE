@@ -19,10 +19,14 @@ app.set('trust proxy', 1);
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc:  ["'self'"],
-      imgSrc:     ["'self'", 'data:'],
-      objectSrc:  ["'none'"],
+      defaultSrc:     ["'self'"],
+      scriptSrc:      ["'self'"],
+      scriptSrcAttr:  ["'none'"],   // block inline event handlers (onclick, onerror, …)
+      styleSrc:       ["'self'"],
+      imgSrc:         ["'self'", 'data:'],
+      objectSrc:      ["'none'"],
+      baseUri:        ["'none'"],   // prevent <base href> hijacking of relative URLs
+      formAction:     ["'self'"],   // prevent form submissions to external origins
       frameAncestors: ["'none'"],
     },
   },
