@@ -34,7 +34,13 @@ export function attachChatServer(httpServer: HttpServer): void {
       if (!match) return reject(socket, 404, 'Not Found');
 
       const bandId = decodeURIComponent(match[1]);
-      const token = url.searchParams.get('token');
+
+      const protocols = (request.headers['sec-websocket-protocol'] ?? '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const bearerIdx = protocols.indexOf('bearer');
+      const token = bearerIdx >= 0 ? protocols[bearerIdx + 1] : null;
       if (!token) return reject(socket, 401, 'Unauthorized');
 
       let userId: string;
