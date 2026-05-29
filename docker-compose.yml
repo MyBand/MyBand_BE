@@ -35,7 +35,8 @@ services:
       - "443:443"
     volumes:
       - ./config/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./config/ssl:/etc/nginx/ssl:ro    # SSL 인증서 (cert.pem, key.pem)
+      - ./config/ssl:/etc/nginx/ssl:ro
+      - certbot_www:/var/www/certbot:ro
     depends_on:
       app:
         condition: service_healthy
@@ -49,6 +50,24 @@ services:
       retries: 3
       start_period: 10s
 
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - certbot_conf:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+      - ./config/ssl:/etc/ssl-export
+    entrypoint: /bin/sh -c
+      'trap exit TERM;
+       while :; do
+         certbot renew --quiet
+           --deploy-hook "cp /etc/letsencrypt/live/pagomnini.kro.kr/fullchain.pem /etc/ssl-export/cert.pem
+                       && cp /etc/letsencrypt/live/pagomnini.kro.kr/privkey.pem   /etc/ssl-export/key.pem";
+         sleep 12h & wait $${!};
+       done;'
+    restart: unless-stopped
+
 volumes:
   db_data:
   uploads_data:
+  certbot_conf:
+  certbot_www:
