@@ -6,5 +6,6 @@ dist/
 src/routes/
 prisma/migrations/dev.db*
 uploads/
+config/ssl/
 
 ./.agents
