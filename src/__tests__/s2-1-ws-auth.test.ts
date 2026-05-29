@@ -6,7 +6,7 @@
  */
 
 // Set required env vars before any module imports that read them at load time.
-process.env.JWT_SECRET = 'test-secret-s2-1';
+process.env.JWT_SECRET = 'test-secret-that-is-32-chars-long!!';
 process.env.DATABASE_URL = 'file:./prisma/test.db';
 process.env.GOOGLE_CLIENT_ID = 'test-google-client-id';
 
