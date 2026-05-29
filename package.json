@@ -14,7 +14,7 @@
     "test:watch": "jest --watch --runInBand"
   },
   "dependencies": {
-    "@prisma/adapter-better-sqlite3": "^6.1.0",
+    "@prisma/adapter-better-sqlite3": "^7.8.0",
     "@prisma/client": "^6.1.0",
     "better-sqlite3": "^11.3.0",
     "cors": "^2.8.6",
