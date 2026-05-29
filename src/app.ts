@@ -1,17 +1,32 @@
 import path from 'path';
 import fs from 'fs';
 import express from 'express';
+import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
 import { RegisterRoutes } from './routes/routes';
 import swaggerDocument from './routes/swagger.json';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
 import { imageUpload, fileUpload, verifyImageMime, verifyFileMime } from './middlewares/uploads';
 import { requestLogger } from './middlewares/requestLogger';
+import { expressAuthentication } from './middlewares/auth';
 import cors from 'cors';
 
 export const app = express();
 
 app.set('trust proxy', 1);
+
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc:  ["'self'"],
+      imgSrc:     ["'self'", 'data:'],
+      objectSrc:  ["'none'"],
+      frameAncestors: ["'none'"],
+    },
+  },
+  crossOriginResourcePolicy: { policy: 'same-origin' },
+}));
 
 const corsOrigins = new Set(
   [
@@ -30,12 +45,23 @@ app.use(cors({
       callback(null, true);
       return;
     }
-    callback(new Error(`CORS origin not allowed: ${origin}`));
+    callback(null, false);
   },
   methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 }));
+
+function requireJwt(req: express.Request, res: express.Response, next: express.NextFunction): void {
+  expressAuthentication(req, 'jwt')
+    .then((user) => {
+      req.user = user as import('./middlewares/auth').RequestUser;
+      next();
+    })
+    .catch(() => {
+      res.status(401).json({ message: 'Unauthorized' });
+    });
+}
 
 // Keep preflight requests from falling through to 404 routes.
 app.use((req, res, next) => {
@@ -54,8 +80,8 @@ const uploadsDir = path.resolve(process.cwd(), 'uploads');
 fs.mkdirSync(uploadsDir, { recursive: true });
 app.use('/static/uploads', express.static(uploadsDir));
 
-app.post('/attachments/images', imageUpload.single('file'), verifyImageMime);
-app.post('/attachments/files', fileUpload.single('file'), verifyFileMime);
+app.post('/attachments/images', requireJwt, imageUpload.single('file'), verifyImageMime);
+app.post('/attachments/files',  requireJwt, fileUpload.single('file'),  verifyFileMime);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
