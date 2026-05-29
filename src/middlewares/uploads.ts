@@ -6,7 +6,7 @@ const memoryStorage = multer.memoryStorage();
 
 const IMAGE_EXTENSIONS = new Set([
   '.jpg', '.jpeg', '.png', '.gif', '.webp',
-  '.bmp', '.svg', '.tiff', '.heic', '.heif', '.avif',
+  '.bmp', '.tiff', '.heic', '.heif', '.avif',
 ]);
 
 function extensionOf(filename: string): string {
@@ -52,10 +52,6 @@ function detectMime(buf: Buffer): string | null {
 
   // PDF: %PDF
   if (buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46) return 'application/pdf';
-
-  // SVG: XML / <svg (text-based; check first 256 bytes)
-  const head = buf.slice(0, 256).toString('utf8').trimStart();
-  if (head.startsWith('<?xml') || head.startsWith('<svg')) return 'image/svg+xml';
 
   return null;
 }
