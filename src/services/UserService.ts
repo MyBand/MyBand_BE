@@ -1,5 +1,6 @@
 import { UserRepository } from '../repositories/UserRepository';
 import { BadRequestError, NotFoundError } from '../errors/HttpError';
+import { requireOwnUrl } from '../utils/urlValidator';
 import { BandService } from './BandService';
 import type {
   CompleteOnboardingRequest,
@@ -35,6 +36,7 @@ export class UserService {
   ): Promise<UserProfileResponse> {
     const existing = await this.users.findById(id);
     if (!existing) throw new NotFoundError(`User ${id} not found`);
+    requireOwnUrl(body.profileImageUrl, 'profileImageUrl');
     const updated = await this.users.update(id, body);
     return toResponse(updated);
   }

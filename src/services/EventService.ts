@@ -5,6 +5,7 @@ import {
 } from '../repositories/EventRepository';
 import { BandMemberService } from './BandMemberService';
 import { NotFoundError } from '../errors/HttpError';
+import { requireOwnUrl } from '../utils/urlValidator';
 import type {
   CreateEventRequest,
   EventResponse,
@@ -116,7 +117,7 @@ function normalizeSetlist(
     title: it.title,
     artist: it.artist,
     key: it.key ?? null,
-    sheetMusicUrl: it.sheetMusicUrl ?? null,
+    sheetMusicUrl: requireOwnUrl(it.sheetMusicUrl, 'sheetMusicUrl'),
     references: it.references ?? [],
   }));
 }

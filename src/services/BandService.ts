@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { requireOwnUrl } from '../utils/urlValidator';
 import { BandRepository } from '../repositories/BandRepository';
 import { BandMemberRepository } from '../repositories/BandMemberRepository';
 import { BandMemberService } from './BandMemberService';
@@ -44,6 +45,7 @@ export class BandService {
     creatorId: string,
     instrument?: string | null,
   ): Promise<BandResponse> {
+    requireOwnUrl(input.iconUrl, 'iconUrl');
     const band = await this.createBandWithUniqueInviteCode(input, creatorId, instrument);
     return toResponse(band);
   }
@@ -83,6 +85,7 @@ export class BandService {
     requesterId: string,
     input: UpdateBandRequest,
   ): Promise<BandResponse> {
+    requireOwnUrl(input.iconUrl, 'iconUrl');
     await this.memberService.assertOwner(bandId, requesterId);
     const updated = await this.bands.update(bandId, input);
     return toResponse(updated);

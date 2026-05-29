@@ -2,6 +2,7 @@ import { MessageRepository } from '../repositories/MessageRepository';
 import { BandMemberService } from './BandMemberService';
 import { chatHub } from '../ws/chatHub';
 import { BadRequestError } from '../errors/HttpError';
+import { requireOwnUrl } from '../utils/urlValidator';
 import type { Prisma } from '@prisma/client';
 import type {
   MessageAttachment,
@@ -82,7 +83,7 @@ function normalizeAttachments(input: MessageAttachment[] | undefined): MessageAt
     .filter((item) => item.url && item.filename && (item.type === 'image' || item.type === 'pdf'))
     .map((item) => ({
       type: item.type,
-      url: item.url,
+      url: requireOwnUrl(item.url, 'attachment url') ?? item.url,
       filename: item.filename,
     }));
 }
