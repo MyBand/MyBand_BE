@@ -52,7 +52,7 @@ app.use(express.urlencoded({ extended: true }));
 
 const uploadsDir = path.resolve(process.cwd(), 'uploads');
 fs.mkdirSync(uploadsDir, { recursive: true });
-app.use('/static/uploads', express.static(uploadsDir));
+// Static file serving removed — use GET /attachments/:id (requires JWT)
 
 app.post('/attachments/images', imageUpload.single('file'), verifyImageMime);
 app.post('/attachments/files', fileUpload.single('file'), verifyFileMime);

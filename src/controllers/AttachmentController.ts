@@ -1,6 +1,11 @@
+import path from 'path';
+import fs from 'fs';
 import {
   Controller,
+  Get,
+  Path,
   Post,
+  Query,
   Request,
   Route,
   Security,
@@ -22,9 +27,10 @@ export class AttachmentController extends Controller {
   @SuccessResponse(201, 'Created')
   public async uploadImage(
     @Request() req: ExpressRequest,
+    @Query() bandId?: string,
   ): Promise<AttachmentResponse> {
     if (!req.user) throw new UnauthorizedError();
-    const out = this.service.saveImage(req.file, baseUrlFrom(req));
+    const out = await this.service.saveImage(req.file, baseUrlFrom(req), req.user.id, bandId);
     this.setStatus(201);
     return out;
   }
@@ -33,11 +39,48 @@ export class AttachmentController extends Controller {
   @SuccessResponse(201, 'Created')
   public async uploadFile(
     @Request() req: ExpressRequest,
+    @Query() bandId?: string,
   ): Promise<AttachmentResponse> {
     if (!req.user) throw new UnauthorizedError();
-    const out = this.service.saveFile(req.file, baseUrlFrom(req));
+    const out = await this.service.saveFile(req.file, baseUrlFrom(req), req.user.id, bandId);
     this.setStatus(201);
     return out;
+  }
+
+  @Get('{id}')
+  @Security('jwt')
+  public async serve(
+    @Path() id: string,
+    @Request() req: ExpressRequest,
+  ): Promise<void> {
+    const res = (req as any).res as import('express').Response;
+    const attachment = await this.service.get(id);
+    if (!attachment) {
+      res.status(404).json({ message: 'Attachment not found' });
+      return;
+    }
+    if (attachment.bandId) {
+      const userId = req.user?.id;
+      if (!userId) {
+        res.status(401).json({ message: 'Unauthorized' });
+        return;
+      }
+      const { BandMemberRepository } = await import('../repositories/BandMemberRepository');
+      const memberRepo = new BandMemberRepository();
+      const member = await memberRepo.findByBandAndUser(attachment.bandId, userId);
+      if (!member || member.leftAt !== null) {
+        res.status(403).json({ message: 'Forbidden' });
+        return;
+      }
+    }
+    const uploadRoot = path.resolve(process.cwd(), 'uploads');
+    const fullPath = path.join(uploadRoot, attachment.subdir, attachment.filename);
+    await new Promise<void>((resolve, reject) => {
+      res.sendFile(fullPath, { dotfiles: 'allow' }, (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
   }
 }
 
