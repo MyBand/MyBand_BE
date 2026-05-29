@@ -72,9 +72,7 @@ export class BandMemberService {
 
     const invitee = await this.users.findByEmail(body.email);
     if (!invitee) {
-      throw new NotFoundError(
-        `No user with email ${body.email}; ask them to sign up first`,
-      );
+      throw new NotFoundError('Could not invite this address. Ask them to create an account first.');
     }
 
     const existing = await this.members.findByBandAndUser(bandId, invitee.id);
