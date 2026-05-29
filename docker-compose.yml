@@ -17,6 +17,7 @@ services:
       JWT_EXPIRES_IN: "${JWT_EXPIRES_IN:-7d}"
       FRONTEND_URL: "${FRONTEND_URL:-}"
       FRONTEND_URLS: "${FRONTEND_URLS:-}"
+      BASE_URL: "${BASE_URL:-}"
     volumes:
       - db_data:/app/prisma
       - uploads_data:/app/uploads

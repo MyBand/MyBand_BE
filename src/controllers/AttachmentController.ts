@@ -42,6 +42,7 @@ export class AttachmentController extends Controller {
 }
 
 function baseUrlFrom(req: ExpressRequest): string {
+  if (process.env.BASE_URL) return process.env.BASE_URL.replace(/\/$/, '');
   const forwarded = req.headers['x-forwarded-proto'] as string | undefined;
   const proto = forwarded ? forwarded.split(',')[0].trim() : req.protocol;
   return `${proto}://${req.get('host')}`;
