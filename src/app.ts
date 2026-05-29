@@ -8,6 +8,7 @@ import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
 import { imageUpload, fileUpload, verifyImageMime, verifyFileMime } from './middlewares/uploads';
 import { requestLogger } from './middlewares/requestLogger';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 
 export const app = express();
 
@@ -47,6 +48,38 @@ app.use((req, res, next) => {
 });
 
 app.use(requestLogger);
+
+// Auth: 10 requests / 15 min / IP — prevent credential stuffing
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many requests, please try again later.' },
+});
+
+// Band join: 20 attempts / hour / IP — prevent invite code brute force
+const joinLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many join attempts, please try again later.' },
+});
+
+// Uploads: 30 per minute / IP — prevent memory-pressure attacks
+const uploadLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Upload rate limit exceeded.' },
+});
+
+app.use('/auth', authLimiter);
+app.use('/bands/join', joinLimiter);
+app.use('/attachments', uploadLimiter);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
