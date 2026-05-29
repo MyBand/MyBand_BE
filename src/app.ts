@@ -5,7 +5,7 @@ import swaggerUi from 'swagger-ui-express';
 import { RegisterRoutes } from './routes/routes';
 import swaggerDocument from './routes/swagger.json';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
-import { imageUpload, fileUpload } from './middlewares/uploads';
+import { imageUpload, fileUpload, verifyImageMime, verifyFileMime } from './middlewares/uploads';
 import { requestLogger } from './middlewares/requestLogger';
 import cors from 'cors';
 
@@ -54,8 +54,8 @@ const uploadsDir = path.resolve(process.cwd(), 'uploads');
 fs.mkdirSync(uploadsDir, { recursive: true });
 app.use('/static/uploads', express.static(uploadsDir));
 
-app.post('/attachments/images', imageUpload.single('file'));
-app.post('/attachments/files', fileUpload.single('file'));
+app.post('/attachments/images', imageUpload.single('file'), verifyImageMime);
+app.post('/attachments/files', fileUpload.single('file'), verifyFileMime);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
