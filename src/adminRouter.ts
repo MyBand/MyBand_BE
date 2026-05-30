@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import path from 'path';
 import fs from 'fs';
 import { prisma } from './utils/prisma';
@@ -7,26 +7,36 @@ import { adminAuth } from './middlewares/adminAuth';
 const router = Router();
 const uploadsDir = path.resolve(process.cwd(), 'uploads');
 
-router.use(adminAuth);
+// Accepts X-Admin-Secret header OR ?secret= query param so browser <img>/<a> tags work.
+function adminAuthFlex(req: Request, res: Response, next: NextFunction): void {
+  const adminSecret = process.env.ADMIN_SECRET;
+  if (!adminSecret) {
+    res.status(503).json({ error: 'Admin access not configured (set ADMIN_SECRET env var)' });
+    return;
+  }
+  const provided = (req.headers['x-admin-secret'] as string | undefined) ?? (req.query['secret'] as string | undefined);
+  if (provided !== adminSecret) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+  next();
+}
 
-router.get('/stats', async (_req, res) => {
-  const [users, bands, events, messages, activeMembers] = await Promise.all([
+router.get('/stats', adminAuth, async (_req, res) => {
+  const [users, bands, events, messages, activeMembers, imageCount, pdfCount] = await Promise.all([
     prisma.user.count(),
     prisma.band.count(),
     prisma.event.count(),
     prisma.message.count(),
     prisma.bandMember.count({ where: { leftAt: null } }),
+    prisma.attachment.count({ where: { subdir: 'images' } }),
+    prisma.attachment.count({ where: { subdir: 'files' } }),
   ]);
-
-  const imagesDir = path.join(uploadsDir, 'images');
-  const filesDir = path.join(uploadsDir, 'files');
-  const imageCount = fs.existsSync(imagesDir) ? fs.readdirSync(imagesDir).length : 0;
-  const pdfCount = fs.existsSync(filesDir) ? fs.readdirSync(filesDir).length : 0;
 
   res.json({ users, bands, events, messages, activeMembers, files: { images: imageCount, pdfs: pdfCount } });
 });
 
-router.get('/users', async (_req, res) => {
+router.get('/users', adminAuth, async (_req, res) => {
   const users = await prisma.user.findMany({
     orderBy: { createdAt: 'desc' },
     include: {
@@ -36,12 +46,12 @@ router.get('/users', async (_req, res) => {
   res.json(users);
 });
 
-router.delete('/users/:id', async (req, res) => {
+router.delete('/users/:id', adminAuth, async (req, res) => {
   await prisma.user.delete({ where: { id: req.params.id } });
   res.json({ success: true });
 });
 
-router.get('/bands', async (_req, res) => {
+router.get('/bands', adminAuth, async (_req, res) => {
   const bands = await prisma.band.findMany({
     orderBy: { createdAt: 'desc' },
     include: {
@@ -51,62 +61,64 @@ router.get('/bands', async (_req, res) => {
   res.json(bands);
 });
 
-router.delete('/bands/:id', async (req, res) => {
+router.delete('/bands/:id', adminAuth, async (req, res) => {
   await prisma.band.delete({ where: { id: req.params.id } });
   res.json({ success: true });
 });
 
-router.get('/files', (_req, res) => {
-  const imagesDir = path.join(uploadsDir, 'images');
-  const filesDir = path.join(uploadsDir, 'files');
+router.get('/files', adminAuth, async (_req, res) => {
+  const attachments = await prisma.attachment.findMany({
+    orderBy: { createdAt: 'desc' },
+    include: {
+      uploader: { select: { id: true, name: true, email: true } },
+    },
+  });
 
-  const baseUrl = process.env.BASE_URL ?? `http://localhost:${process.env.PORT ?? 3000}`;
+  const withSize = attachments.map((a) => {
+    const diskPath = path.join(uploadsDir, a.subdir, a.filename);
+    const size = fs.existsSync(diskPath) ? fs.statSync(diskPath).size : 0;
+    return {
+      id: a.id,
+      filename: a.filename,
+      mimeType: a.mimeType,
+      size,
+      createdAt: a.createdAt,
+      type: a.subdir === 'images' ? 'image' : 'pdf',
+      bandId: a.bandId,
+      uploader: a.uploader,
+    };
+  });
 
-  const images = fs.existsSync(imagesDir)
-    ? fs.readdirSync(imagesDir).map((filename) => {
-        const stat = fs.statSync(path.join(imagesDir, filename));
-        return {
-          filename,
-          size: stat.size,
-          createdAt: stat.birthtime,
-          type: 'image',
-          url: `${baseUrl}/static/uploads/images/${filename}`,
-        };
-      })
-    : [];
-
-  const pdfs = fs.existsSync(filesDir)
-    ? fs.readdirSync(filesDir).map((filename) => {
-        const stat = fs.statSync(path.join(filesDir, filename));
-        return {
-          filename,
-          size: stat.size,
-          createdAt: stat.birthtime,
-          type: 'pdf',
-          url: `${baseUrl}/static/uploads/files/${filename}`,
-        };
-      })
-    : [];
-
-  res.json({ images, pdfs });
+  res.json({
+    images: withSize.filter((a) => a.type === 'image'),
+    pdfs: withSize.filter((a) => a.type === 'pdf'),
+  });
 });
 
-router.delete('/files/:type/:filename', (req, res) => {
-  const { type, filename } = req.params;
-  if (!['images', 'files'].includes(type)) {
-    res.status(400).json({ error: 'Invalid type. Must be "images" or "files".' });
+// Serves file by attachment ID — accepts ?secret= so browser <img src> and <a href> work.
+router.get('/files/:id', adminAuthFlex, async (req, res) => {
+  const attachment = await prisma.attachment.findUnique({ where: { id: req.params.id } });
+  if (!attachment) {
+    res.status(404).json({ error: 'Attachment not found' });
     return;
   }
-  if (filename.includes('/') || filename.includes('..') || filename.includes('\0')) {
-    res.status(400).json({ error: 'Invalid filename' });
+  const diskPath = path.join(uploadsDir, attachment.subdir, attachment.filename);
+  if (!fs.existsSync(diskPath)) {
+    res.status(404).json({ error: 'File not found on disk' });
     return;
   }
-  const filePath = path.join(uploadsDir, type, filename);
-  if (!fs.existsSync(filePath)) {
-    res.status(404).json({ error: 'File not found' });
+  res.sendFile(diskPath);
+});
+
+router.delete('/files/:id', adminAuth, async (req, res) => {
+  const attachment = await prisma.attachment.findUnique({ where: { id: req.params.id } });
+  if (!attachment) {
+    res.status(404).json({ error: 'Attachment not found' });
     return;
   }
-  fs.unlinkSync(filePath);
+  const diskPath = path.join(uploadsDir, attachment.subdir, attachment.filename);
+  if (fs.existsSync(diskPath)) fs.unlinkSync(diskPath);
+  await prisma.attachment.delete({ where: { id: req.params.id } });
   res.json({ success: true });
 });
 
