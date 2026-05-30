@@ -18,6 +18,7 @@ services:
       FRONTEND_URL: "${FRONTEND_URL:-}"
       FRONTEND_URLS: "${FRONTEND_URLS:-}"
       BASE_URL: "${BASE_URL:-}"
+      ADMIN_SECRET: "${ADMIN_SECRET:-}"
     volumes:
       - db_data:/app/prisma
       - uploads_data:/app/uploads

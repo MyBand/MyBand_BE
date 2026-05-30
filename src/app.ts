@@ -9,6 +9,7 @@ import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
 import { imageUpload, fileUpload, verifyImageMime, verifyFileMime } from './middlewares/uploads';
 import { requestLogger } from './middlewares/requestLogger';
 import { expressAuthentication } from './middlewares/auth';
+import adminRouter from './routes/admin';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 
@@ -53,7 +54,8 @@ app.use(cors({
     callback(null, false);
   },
   methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Secret'],
+  credentials: true,
 }));
 
 function requireJwt(req: express.Request, res: express.Response, next: express.NextFunction): void {
@@ -126,6 +128,8 @@ app.get('/health', (_req, res) => {
 if (process.env.NODE_ENV !== 'production') {
   app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 }
+
+app.use('/admin', adminRouter);
 
 RegisterRoutes(app);
 
