@@ -17,6 +17,7 @@ services:
       JWT_EXPIRES_IN: "${JWT_EXPIRES_IN:-7d}"
       FRONTEND_URL: "${FRONTEND_URL:-}"
       FRONTEND_URLS: "${FRONTEND_URLS:-}"
+      ADMIN_URL: "${ADMIN_URL:-}"
       BASE_URL: "${BASE_URL:-}"
       ADMIN_SECRET: "${ADMIN_SECRET:-}"
     volumes:
