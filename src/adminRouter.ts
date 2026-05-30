@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import path from 'path';
 import fs from 'fs';
-import { prisma } from '../utils/prisma';
-import { adminAuth } from '../middlewares/adminAuth';
+import { prisma } from './utils/prisma';
+import { adminAuth } from './middlewares/adminAuth';
 
 const router = Router();
 const uploadsDir = path.resolve(process.cwd(), 'uploads');
