@@ -9,7 +9,7 @@ import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
 import { imageUpload, fileUpload, verifyImageMime, verifyFileMime } from './middlewares/uploads';
 import { requestLogger } from './middlewares/requestLogger';
 import { expressAuthentication } from './middlewares/auth';
-import adminRouter from './routes/admin';
+import adminRouter from './adminRouter';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 
