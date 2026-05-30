@@ -14,7 +14,11 @@ function adminAuthFlex(req: Request, res: Response, next: NextFunction): void {
     res.status(503).json({ error: 'Admin access not configured (set ADMIN_SECRET env var)' });
     return;
   }
-  const provided = (req.headers['x-admin-secret'] as string | undefined) ?? (req.query['secret'] as string | undefined);
+  const fromHeader = req.headers['x-admin-secret'];
+  const fromQuery = req.query['secret'];
+  const provided =
+    (typeof fromHeader === 'string' ? fromHeader : undefined) ??
+    (typeof fromQuery === 'string' ? fromQuery : undefined);
   if (provided !== adminSecret) {
     res.status(401).json({ error: 'Unauthorized' });
     return;
