@@ -7,6 +7,9 @@ import { adminAuth } from './middlewares/adminAuth';
 const router = Router();
 const uploadsDir = path.resolve(process.cwd(), 'uploads');
 
+// Express 5 types req.params values as string | string[]; path params are always scalar strings.
+const strParam = (p: string | string[]): string => (Array.isArray(p) ? p[0]! : p);
+
 // Accepts X-Admin-Secret header OR ?secret= query param so browser <img>/<a> tags work.
 function adminAuthFlex(req: Request, res: Response, next: NextFunction): void {
   const adminSecret = process.env.ADMIN_SECRET;
@@ -51,7 +54,7 @@ router.get('/users', adminAuth, async (_req, res) => {
 });
 
 router.delete('/users/:id', adminAuth, async (req, res) => {
-  await prisma.user.delete({ where: { id: req.params.id } });
+  await prisma.user.delete({ where: { id: strParam(req.params.id) } });
   res.json({ success: true });
 });
 
@@ -66,7 +69,7 @@ router.get('/bands', adminAuth, async (_req, res) => {
 });
 
 router.delete('/bands/:id', adminAuth, async (req, res) => {
-  await prisma.band.delete({ where: { id: req.params.id } });
+  await prisma.band.delete({ where: { id: strParam(req.params.id) } });
   res.json({ success: true });
 });
 
@@ -101,7 +104,7 @@ router.get('/files', adminAuth, async (_req, res) => {
 
 // Serves file by attachment ID — accepts ?secret= so browser <img src> and <a href> work.
 router.get('/files/:id', adminAuthFlex, async (req, res) => {
-  const attachment = await prisma.attachment.findUnique({ where: { id: req.params.id } });
+  const attachment = await prisma.attachment.findUnique({ where: { id: strParam(req.params.id) } });
   if (!attachment) {
     res.status(404).json({ error: 'Attachment not found' });
     return;
@@ -115,14 +118,15 @@ router.get('/files/:id', adminAuthFlex, async (req, res) => {
 });
 
 router.delete('/files/:id', adminAuth, async (req, res) => {
-  const attachment = await prisma.attachment.findUnique({ where: { id: req.params.id } });
+  const id = strParam(req.params.id);
+  const attachment = await prisma.attachment.findUnique({ where: { id } });
   if (!attachment) {
     res.status(404).json({ error: 'Attachment not found' });
     return;
   }
   const diskPath = path.join(uploadsDir, attachment.subdir, attachment.filename);
   if (fs.existsSync(diskPath)) fs.unlinkSync(diskPath);
-  await prisma.attachment.delete({ where: { id: req.params.id } });
+  await prisma.attachment.delete({ where: { id } });
   res.json({ success: true });
 });
 
