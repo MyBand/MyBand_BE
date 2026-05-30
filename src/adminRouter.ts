@@ -103,7 +103,9 @@ router.get('/files', adminAuth, async (_req, res) => {
 });
 
 // Serves file by attachment ID — accepts ?secret= so browser <img src> and <a href> work.
+// Override helmet's same-origin CORP so cross-origin admin panel can load the resource.
 router.get('/files/:id', adminAuthFlex, async (req, res) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   const attachment = await prisma.attachment.findUnique({ where: { id: strParam(req.params.id) } });
   if (!attachment) {
     res.status(404).json({ error: 'Attachment not found' });
