@@ -73,6 +73,83 @@ router.delete('/bands/:id', adminAuth, async (req, res) => {
   res.json({ success: true });
 });
 
+router.get('/bands/:id/members', adminAuth, async (req, res) => {
+  const bandId = strParam(req.params.id);
+  const members = await prisma.bandMember.findMany({
+    where: { bandId, leftAt: null },
+    orderBy: [{ role: 'asc' }, { joinedAt: 'asc' }],
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          nickname: true,
+          email: true,
+          profileImageUrl: true,
+          instrument: true,
+        },
+      },
+    },
+  });
+
+  res.json(members.map((member) => ({
+    id: member.user.id,
+    name: member.user.nickname ?? member.user.name,
+    email: member.user.email,
+    profileImageUrl: member.user.profileImageUrl,
+    instrument: member.instrument ?? member.user.instrument,
+    role: member.role,
+    joinedAt: member.joinedAt,
+  })));
+});
+
+router.patch('/bands/:bandId/members/:userId', adminAuth, async (req, res) => {
+  const bandId = strParam(req.params.bandId);
+  const userId = strParam(req.params.userId);
+  const role = req.body?.role;
+  if (role !== 'owner' && role !== 'member') {
+    res.status(400).json({ error: 'role must be "owner" or "member"' });
+    return;
+  }
+
+  const updated = await prisma.bandMember.update({
+    where: { bandId_userId: { bandId, userId } },
+    data: { role },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          nickname: true,
+          email: true,
+          profileImageUrl: true,
+          instrument: true,
+        },
+      },
+    },
+  });
+
+  res.json({
+    id: updated.user.id,
+    name: updated.user.nickname ?? updated.user.name,
+    email: updated.user.email,
+    profileImageUrl: updated.user.profileImageUrl,
+    instrument: updated.instrument ?? updated.user.instrument,
+    role: updated.role,
+    joinedAt: updated.joinedAt,
+  });
+});
+
+router.delete('/bands/:bandId/members/:userId', adminAuth, async (req, res) => {
+  const bandId = strParam(req.params.bandId);
+  const userId = strParam(req.params.userId);
+  await prisma.bandMember.update({
+    where: { bandId_userId: { bandId, userId } },
+    data: { leftAt: new Date() },
+  });
+  res.json({ success: true });
+});
+
 router.get('/files', adminAuth, async (_req, res) => {
   const attachments = await prisma.attachment.findMany({
     orderBy: { createdAt: 'desc' },
