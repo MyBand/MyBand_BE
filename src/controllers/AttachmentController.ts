@@ -14,16 +14,18 @@ import {
 } from 'tsoa';
 import type { Request as ExpressRequest } from 'express';
 import { AttachmentService } from '../services/AttachmentService';
+import { AuthService } from '../services/AuthService';
 import { UnauthorizedError } from '../errors/HttpError';
 import type { AttachmentResponse } from '../dtos/attachment.dto';
 
 @Route('attachments')
 @Tags('Attachments')
-@Security('jwt')
 export class AttachmentController extends Controller {
   private readonly service = new AttachmentService();
+  private readonly authService = new AuthService();
 
   @Post('images')
+  @Security('jwt')
   @SuccessResponse(201, 'Created')
   public async uploadImage(
     @Request() req: ExpressRequest,
@@ -36,6 +38,7 @@ export class AttachmentController extends Controller {
   }
 
   @Post('files')
+  @Security('jwt')
   @SuccessResponse(201, 'Created')
   public async uploadFile(
     @Request() req: ExpressRequest,
@@ -47,24 +50,46 @@ export class AttachmentController extends Controller {
     return out;
   }
 
+  /**
+   * Serve an attachment file. Accepts a JWT via Authorization header or ?token= query param
+   * so the URL can be embedded directly in <img> tags and download links.
+   */
   @Get('{id}')
-  @Security('jwt')
   public async serve(
     @Path() id: string,
     @Request() req: ExpressRequest,
+    @Query() token?: string,
   ): Promise<void> {
     const res = (req as any).res as import('express').Response;
+
+    // Accept Bearer token from Authorization header or ?token= query param
+    const header = req.headers['authorization'];
+    const rawToken =
+      (header?.toLowerCase().startsWith('bearer ') ? header.slice(7).trim() : null) ??
+      token ??
+      null;
+
+    if (!rawToken) {
+      res.status(401).json({ message: 'Unauthorized' });
+      return;
+    }
+
+    let userId: string;
+    try {
+      const verified = await this.authService.verifyAccessToken(rawToken);
+      userId = verified.id;
+    } catch {
+      res.status(401).json({ message: 'Unauthorized' });
+      return;
+    }
+
     const attachment = await this.service.get(id);
     if (!attachment) {
       res.status(404).json({ message: 'Attachment not found' });
       return;
     }
+
     if (attachment.bandId) {
-      const userId = req.user?.id;
-      if (!userId) {
-        res.status(401).json({ message: 'Unauthorized' });
-        return;
-      }
       const { BandMemberRepository } = await import('../repositories/BandMemberRepository');
       const memberRepo = new BandMemberRepository();
       const member = await memberRepo.findByBandAndUser(attachment.bandId, userId);
@@ -73,6 +98,7 @@ export class AttachmentController extends Controller {
         return;
       }
     }
+
     const uploadRoot = path.resolve(process.cwd(), 'uploads');
     const fullPath = path.join(uploadRoot, attachment.subdir, attachment.filename);
     await new Promise<void>((resolve, reject) => {

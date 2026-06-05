@@ -124,11 +124,18 @@ describe('S2-3: Attachment serve route requires JWT auth + band membership', () 
     expect(res.status).toBe(401);
   });
 
-  it('GET /attachments/:id for a profile image (no bandId) with valid JWT returns 200', async () => {
+  it('GET /attachments/:id with valid JWT in Authorization header returns 200', async () => {
     const { token } = makeTestToken(uploaderUserId);
     const res = await request(app)
       .get(`/api/attachments/${profileAttachmentId}`)
       .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(200);
+  });
+
+  it('GET /attachments/:id with valid JWT in ?token= query param returns 200', async () => {
+    const { token } = makeTestToken(uploaderUserId);
+    const res = await request(app)
+      .get(`/api/attachments/${profileAttachmentId}?token=${token}`);
     expect(res.status).toBe(200);
   });
 
