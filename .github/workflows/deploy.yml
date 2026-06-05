@@ -145,7 +145,6 @@ jobs:
           set -euo pipefail
 
           cd "$DEPLOY_PATH"
-          docker compose pull nginx
           docker compose down --remove-orphans
           docker compose up -d --build --remove-orphans
 
