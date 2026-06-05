@@ -34,16 +34,16 @@ describe('S3-1: requireOwnUrl validates attachment URLs against BASE_URL', () =>
     }
   });
 
-  it('accepts URL that starts with BASE_URL/attachments/', () => {
+  it('accepts URL that starts with BASE_URL/api/attachments/', () => {
     const { requireOwnUrl } = require('../utils/urlValidator');
     process.env.BASE_URL = 'https://myserver.example.com';
     try {
       expect(() =>
-        requireOwnUrl('https://myserver.example.com/attachments/cm123abc', 'profileImageUrl'),
+        requireOwnUrl('https://myserver.example.com/api/attachments/cm123abc', 'profileImageUrl'),
       ).not.toThrow();
       expect(
-        requireOwnUrl('https://myserver.example.com/attachments/cm123abc', 'profileImageUrl'),
-      ).toBe('https://myserver.example.com/attachments/cm123abc');
+        requireOwnUrl('https://myserver.example.com/api/attachments/cm123abc', 'profileImageUrl'),
+      ).toBe('https://myserver.example.com/api/attachments/cm123abc');
     } finally {
       delete process.env.BASE_URL;
     }
@@ -54,7 +54,7 @@ describe('S3-1: requireOwnUrl validates attachment URLs against BASE_URL', () =>
     process.env.BASE_URL = 'https://myserver.example.com/';
     try {
       expect(() =>
-        requireOwnUrl('https://myserver.example.com/attachments/cm123', 'icon'),
+        requireOwnUrl('https://myserver.example.com/api/attachments/cm123', 'icon'),
       ).not.toThrow();
     } finally {
       delete process.env.BASE_URL;
