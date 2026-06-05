@@ -7,7 +7,7 @@ import { BandMemberService } from '../services/BandMemberService';
 import { chatHub } from './chatHub';
 import { logger } from '../utils/logger';
 
-const CHAT_PATH = /^\/bands\/([^/]+)\/chat\/?$/;
+const CHAT_PATH = /^\/api\/bands\/([^/]+)\/chat\/?$/;
 
 interface ChatContext {
   bandId: string;
@@ -40,7 +40,9 @@ export function attachChatServer(httpServer: HttpServer): void {
         .map((s) => s.trim())
         .filter(Boolean);
       const bearerIdx = protocols.indexOf('bearer');
-      const token = bearerIdx >= 0 ? protocols[bearerIdx + 1] : null;
+      const token =
+        (bearerIdx >= 0 ? protocols[bearerIdx + 1] : null) ??
+        url.searchParams.get('token');
       if (!token) return reject(socket, 401, 'Unauthorized');
 
       let userId: string;

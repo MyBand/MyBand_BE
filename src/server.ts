@@ -11,6 +11,6 @@ httpServer.listen(env.PORT, () => {
   logger.info(`MyBand BE listening on http://localhost:${env.PORT}`);
   logger.info(`Swagger UI at http://localhost:${env.PORT}/docs`);
   logger.info(
-    `Chat WebSocket at ws://localhost:${env.PORT}/bands/{bandId}/chat?token=...`,
+    `Chat WebSocket at ws://localhost:${env.PORT}/api/bands/{bandId}/chat?token=...`,
   );
 });
