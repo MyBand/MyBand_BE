@@ -85,6 +85,6 @@ export class AttachmentService {
       filename,
       mimeType: file.mimetype,
     });
-    return { id: attachment.id, url: `${baseUrl}/attachments/${attachment.id}` };
+    return { id: attachment.id, url: `${baseUrl}/api/attachments/${attachment.id}` };
   }
 }
