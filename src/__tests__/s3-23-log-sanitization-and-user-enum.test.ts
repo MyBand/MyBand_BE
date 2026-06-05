@@ -61,7 +61,7 @@ describe('S3-3: Invite unknown email returns generic error', () => {
   it('valid JWT invite to non-existent band returns 404 (not leaking email in error)', async () => {
     const { token } = makeTestToken();
     const res = await request(app)
-      .post('/bands/nonexistent-band-id/members/invite')
+      .post('/api/bands/nonexistent-band-id/members/invite')
       .set('Authorization', `Bearer ${token}`)
       .send({ email: 'victim@example.com' });
     // 404 from band not found — not 500, and body does not echo the email

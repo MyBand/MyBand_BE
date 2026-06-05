@@ -73,7 +73,7 @@ async function main() {
     0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
   ]);
   const imgOk = await uploadMultipart(
-    '/attachments/images',
+    '/api/attachments/images',
     alice.token,
     pngBytes,
     'pic.png',
@@ -100,7 +100,7 @@ async function main() {
 
   // 3. Wrong mime to /images → 400
   const wrongImg = await uploadMultipart(
-    '/attachments/images',
+    '/api/attachments/images',
     alice.token,
     Buffer.from('%PDF-1.4'),
     'doc.pdf',
@@ -110,7 +110,7 @@ async function main() {
 
   // 4. No file → 400 (BadRequestError from service)
   const noFile = await uploadMultipart(
-    '/attachments/images',
+    '/api/attachments/images',
     alice.token,
     null,
     '',
@@ -121,7 +121,7 @@ async function main() {
   // 5. PDF upload OK
   const pdfBytes = Buffer.from('%PDF-1.4 minimal');
   const pdfOk = await uploadMultipart(
-    '/attachments/files',
+    '/api/attachments/files',
     alice.token,
     pdfBytes,
     'doc.pdf',
@@ -139,7 +139,7 @@ async function main() {
 
   // 6. Wrong mime to /files (image) → 400
   const wrongFile = await uploadMultipart(
-    '/attachments/files',
+    '/api/attachments/files',
     alice.token,
     pngBytes,
     'pic.png',
@@ -150,7 +150,7 @@ async function main() {
   // 7. Image >10MB → 413
   const big = Buffer.alloc(10 * 1024 * 1024 + 100, 0xff);
   const tooBig = await uploadMultipart(
-    '/attachments/images',
+    '/api/attachments/images',
     alice.token,
     big,
     'big.png',
@@ -161,7 +161,7 @@ async function main() {
   // 8. PDF >20MB → 413
   const bigPdf = Buffer.alloc(20 * 1024 * 1024 + 100, 0x25);
   const tooBigPdf = await uploadMultipart(
-    '/attachments/files',
+    '/api/attachments/files',
     alice.token,
     bigPdf,
     'big.pdf',
@@ -171,7 +171,7 @@ async function main() {
 
   // 9. No auth → 401
   const noAuth = await uploadMultipart(
-    '/attachments/images',
+    '/api/attachments/images',
     null,
     pngBytes,
     'pic.png',
@@ -181,7 +181,7 @@ async function main() {
 
   // 10. Invalid token → 401
   const badAuth = await uploadMultipart(
-    '/attachments/images',
+    '/api/attachments/images',
     'not-a-real-jwt',
     pngBytes,
     'pic.png',

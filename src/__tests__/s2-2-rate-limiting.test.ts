@@ -19,7 +19,7 @@ describe('S2-2: Rate limiting', () => {
     const responses: number[] = [];
     for (let i = 0; i < 11; i++) {
       const res = await request(app)
-        .post('/auth/google')
+        .post('/api/auth/google')
         .set('X-Forwarded-For', ip)
         .send({ idToken: 'fake' });
       responses.push(res.status);
@@ -33,7 +33,7 @@ describe('S2-2: Rate limiting', () => {
     const responses: number[] = [];
     for (let i = 0; i < 21; i++) {
       const res = await request(app)
-        .post('/bands/join')
+        .post('/api/bands/join')
         .set('X-Forwarded-For', ip)
         .set('Authorization', 'Bearer fake')
         .send({ inviteCode: 'TESTCODE' });
@@ -47,7 +47,7 @@ describe('S2-2: Rate limiting', () => {
     const responses: number[] = [];
     for (let i = 0; i < 31; i++) {
       const res = await request(app)
-        .post('/attachments/images')
+        .post('/api/attachments/images')
         .set('X-Forwarded-For', ip);
       responses.push(res.status);
     }
@@ -59,13 +59,13 @@ describe('S2-2: Rate limiting', () => {
     // Exhaust the auth limit
     for (let i = 0; i < 10; i++) {
       await request(app)
-        .post('/auth/google')
+        .post('/api/auth/google')
         .set('X-Forwarded-For', ip)
         .send({ idToken: 'fake' });
     }
     // 11th request
     const res = await request(app)
-      .post('/auth/google')
+      .post('/api/auth/google')
       .set('X-Forwarded-For', ip)
       .send({ idToken: 'fake' });
     expect(res.status).toBe(429);

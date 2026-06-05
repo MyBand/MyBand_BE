@@ -118,24 +118,24 @@ async function main() {
   const carol = await makeUser('Carol');
 
   // Setup band: Alice owner, Bob member; Carol is non-member.
-  const bandRes = await call('POST', '/bands', alice, {
+  const bandRes = await call('POST', '/api/bands', alice, {
     name: 'ChatBand',
   });
   const bandId = (bandRes.body as { id: string }).id;
-  await call('POST', `/bands/${bandId}/members`, alice, { email: bob.email });
+  await call('POST', `/api/bands/${bandId}/members`, alice, { email: bob.email });
 
   // -- HTTP message basics --
-  const send1 = await call('POST', `/bands/${bandId}/messages`, alice, {
+  const send1 = await call('POST', `/api/bands/${bandId}/messages`, alice, {
     text: 'hello world',
   });
   expect('http send 201', send1.status === 201, send1);
 
-  const carolSend = await call('POST', `/bands/${bandId}/messages`, carol, {
+  const carolSend = await call('POST', `/api/bands/${bandId}/messages`, carol, {
     text: 'sneaky',
   });
   expect('non-member send 403', carolSend.status === 403, carolSend);
 
-  const list1 = await call('GET', `/bands/${bandId}/messages`, alice);
+  const list1 = await call('GET', `/api/bands/${bandId}/messages`, alice);
   expect(
     'list returns the sent message',
     list1.status === 200 &&
@@ -152,14 +152,14 @@ async function main() {
   // -- Cursor pagination --
   // Send 5 more (so 6 total). Spaced slightly to avoid ms ties.
   for (let i = 0; i < 5; i++) {
-    await call('POST', `/bands/${bandId}/messages`, alice, {
+    await call('POST', `/api/bands/${bandId}/messages`, alice, {
       text: `msg-${i}`,
     });
     await sleep(20);
   }
   const page1 = await call(
     'GET',
-    `/bands/${bandId}/messages?limit=3`,
+    `/api/bands/${bandId}/messages?limit=3`,
     alice,
   );
   const p1 = page1.body as {
@@ -176,7 +176,7 @@ async function main() {
 
   const page2 = await call(
     'GET',
-    `/bands/${bandId}/messages?limit=3&cursor=${p1.nextCursor}`,
+    `/api/bands/${bandId}/messages?limit=3&cursor=${p1.nextCursor}`,
     alice,
   );
   const p2 = page2.body as {
@@ -210,7 +210,7 @@ async function main() {
   );
 
   // Bob sends via HTTP — both alice and bob WS should receive
-  await call('POST', `/bands/${bandId}/messages`, bob, {
+  await call('POST', `/api/bands/${bandId}/messages`, bob, {
     text: 'live broadcast 1',
   });
   await sleep(150);
@@ -227,7 +227,7 @@ async function main() {
   );
 
   // Alice sends — both should receive
-  await call('POST', `/bands/${bandId}/messages`, alice, {
+  await call('POST', `/api/bands/${bandId}/messages`, alice, {
     text: 'live broadcast 2',
   });
   await sleep(150);

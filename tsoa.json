@@ -5,6 +5,7 @@
   "spec": {
     "outputDirectory": "src/routes",
     "specVersion": 3,
+    "basePath": "/api",
     "securityDefinitions": {
       "jwt": {
         "type": "apiKey",

@@ -40,14 +40,14 @@ async function main() {
   // 1. PNG — 기존 동작 유지
   const f1 = new FormData();
   f1.append('file', new Blob([new Uint8Array([0x89,0x50,0x4e,0x47])], { type: 'image/png' }), 'test.png');
-  const r1 = await call('POST', '/attachments/images', token, f1);
+  const r1 = await call('POST', '/api/attachments/images', token, f1);
   expect('PNG 업로드 201', r1.status === 201);
   expect('PNG URL .png', (r1.body as {url:string}).url?.endsWith('.png'));
 
   // 2. PDF — 신규 허용
   const f2 = new FormData();
   f2.append('file', new Blob([Buffer.from('%PDF-1.4')], { type: 'application/pdf' }), 'score.pdf');
-  const r2 = await call('POST', '/attachments/images', token, f2);
+  const r2 = await call('POST', '/api/attachments/images', token, f2);
   expect('PDF 업로드 201', r2.status === 201, r2);
   expect('PDF URL .pdf', (r2.body as {url:string}).url?.endsWith('.pdf'), r2.body);
 
@@ -59,14 +59,14 @@ async function main() {
   // 4. 허용 안 되는 타입 → 400
   const f3 = new FormData();
   f3.append('file', new Blob([Buffer.from('data')], { type: 'audio/mpeg' }), 'x.mp3');
-  const r3 = await call('POST', '/attachments/images', token, f3);
+  const r3 = await call('POST', '/api/attachments/images', token, f3);
   expect('허용 안 되는 타입 400', r3.status === 400, r3.body);
 
   // 5. 20MB 초과 → 413
   const big = Buffer.alloc(20 * 1024 * 1024 + 100, 0x25);
   const f4 = new FormData();
   f4.append('file', new Blob([new Uint8Array(big)], { type: 'application/pdf' }), 'big.pdf');
-  const r4 = await call('POST', '/attachments/images', token, f4);
+  const r4 = await call('POST', '/api/attachments/images', token, f4);
   expect('20MB 초과 413', r4.status === 413, r4.body);
 
   console.log(`\n${pass} passed, ${fail} failed`);

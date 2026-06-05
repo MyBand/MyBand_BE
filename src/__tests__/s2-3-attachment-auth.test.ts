@@ -120,14 +120,14 @@ afterAll(async () => {
 
 describe('S2-3: Attachment serve route requires JWT auth + band membership', () => {
   it('GET /attachments/:id without JWT returns 401', async () => {
-    const res = await request(app).get(`/attachments/${profileAttachmentId}`);
+    const res = await request(app).get(`/api/attachments/${profileAttachmentId}`);
     expect(res.status).toBe(401);
   });
 
   it('GET /attachments/:id for a profile image (no bandId) with valid JWT returns 200', async () => {
     const { token } = makeTestToken(uploaderUserId);
     const res = await request(app)
-      .get(`/attachments/${profileAttachmentId}`)
+      .get(`/api/attachments/${profileAttachmentId}`)
       .set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
   });
@@ -135,7 +135,7 @@ describe('S2-3: Attachment serve route requires JWT auth + band membership', () 
   it('GET /attachments/:id for a band attachment — non-member gets 403', async () => {
     const { token } = makeTestToken(nonMemberUserId);
     const res = await request(app)
-      .get(`/attachments/${bandAttachmentId}`)
+      .get(`/api/attachments/${bandAttachmentId}`)
       .set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(403);
   });
@@ -143,7 +143,7 @@ describe('S2-3: Attachment serve route requires JWT auth + band membership', () 
   it('GET /attachments/:id for a band attachment — band member gets 200', async () => {
     const { token } = makeTestToken(memberUserId);
     const res = await request(app)
-      .get(`/attachments/${bandAttachmentId}`)
+      .get(`/api/attachments/${bandAttachmentId}`)
       .set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
   });
@@ -151,7 +151,7 @@ describe('S2-3: Attachment serve route requires JWT auth + band membership', () 
   it('GET /attachments/:nonexistent-id returns 404', async () => {
     const { token } = makeTestToken(uploaderUserId);
     const res = await request(app)
-      .get('/attachments/nonexistent-cuid-12345')
+      .get('/api/attachments/nonexistent-cuid-12345')
       .set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(404);
   });

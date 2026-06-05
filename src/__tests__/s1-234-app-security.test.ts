@@ -27,14 +27,14 @@ describe('S1-2: Security headers (helmet)', () => {
 describe('S1-3: Upload auth runs before multer', () => {
   it('POST /attachments/images without JWT returns 401 before parsing body', async () => {
     const res = await request(app)
-      .post('/attachments/images')
+      .post('/api/attachments/images')
       .attach('file', VALID_PNG, { filename: 'photo.png', contentType: 'image/png' });
     expect(res.status).toBe(401);
   });
 
   it('POST /attachments/files without JWT returns 401', async () => {
     const res = await request(app)
-      .post('/attachments/files')
+      .post('/api/attachments/files')
       .attach('file', Buffer.from('%PDF-1.4'), { filename: 'doc.pdf', contentType: 'application/pdf' });
     expect(res.status).toBe(401);
   });

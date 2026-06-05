@@ -67,7 +67,7 @@ async function main() {
   const carol = await makeUser('Carol');
 
   // 1. Create band as Alice
-  const create = await call('POST', '/bands', alice, {
+  const create = await call('POST', '/api/bands', alice, {
     name: 'IndieStars',
     description: 'modern rock',
   });
@@ -80,7 +80,7 @@ async function main() {
   );
 
   // 2. List as Alice — should include band
-  const listA = await call('GET', '/bands', alice);
+  const listA = await call('GET', '/api/bands', alice);
   expect(
     'list bands as owner',
     listA.status === 200 &&
@@ -90,18 +90,18 @@ async function main() {
   );
 
   // 3. Bob (non-member) gets 403 on detail
-  const detailBob = await call('GET', `/bands/${bandId}`, bob);
+  const detailBob = await call('GET', `/api/bands/${bandId}`, bob);
   expect('non-member 403 on band detail', detailBob.status === 403, detailBob);
 
   // 4. Invite Bob by email
-  const inv = await call('POST', `/bands/${bandId}/members`, alice, {
+  const inv = await call('POST', `/api/bands/${bandId}/members`, alice, {
     email: bob.email,
     instrument: 'Bass',
   });
   expect('invite by email 201', inv.status === 201, inv);
 
   // 5. Invite non-existent email → 404
-  const invMissing = await call('POST', `/bands/${bandId}/members`, alice, {
+  const invMissing = await call('POST', `/api/bands/${bandId}/members`, alice, {
     email: 'ghost@nowhere.test',
   });
   expect(
@@ -111,7 +111,7 @@ async function main() {
   );
 
   // 6. List members
-  const membersList = await call('GET', `/bands/${bandId}/members`, alice);
+  const membersList = await call('GET', `/api/bands/${bandId}/members`, alice);
   expect(
     'list members ok',
     membersList.status === 200 &&
@@ -120,13 +120,13 @@ async function main() {
   );
 
   // 7. Bob (member, not owner) tries to PATCH band → 403
-  const patchBob = await call('PATCH', `/bands/${bandId}`, bob, {
+  const patchBob = await call('PATCH', `/api/bands/${bandId}`, bob, {
     name: 'hacked',
   });
   expect('non-owner cannot patch band', patchBob.status === 403, patchBob);
 
   // 8. Alice (owner) PATCHes band → 200
-  const patchA = await call('PATCH', `/bands/${bandId}`, alice, {
+  const patchA = await call('PATCH', `/api/bands/${bandId}`, alice, {
     description: 'updated',
   });
   expect(
@@ -139,7 +139,7 @@ async function main() {
   // 9. Bob updates his own instrument → 200
   const selfUpdate = await call(
     'PATCH',
-    `/bands/${bandId}/members/${bob.id}`,
+    `/api/bands/${bandId}/members/${bob.id}`,
     bob,
     { instrument: 'Drums' },
   );
@@ -153,7 +153,7 @@ async function main() {
   // 10. Bob tries to change his own role → 403
   const selfRole = await call(
     'PATCH',
-    `/bands/${bandId}/members/${bob.id}`,
+    `/api/bands/${bandId}/members/${bob.id}`,
     bob,
     { role: 'owner' },
   );
@@ -162,7 +162,7 @@ async function main() {
   // 11. Alice tries to leave (last owner) → 409
   const aliceLeave = await call(
     'DELETE',
-    `/bands/${bandId}/members/${alice.id}`,
+    `/api/bands/${bandId}/members/${alice.id}`,
     alice,
   );
   expect(
@@ -174,7 +174,7 @@ async function main() {
   // 12. Alice promotes Bob to owner → 200
   const promote = await call(
     'PATCH',
-    `/bands/${bandId}/members/${bob.id}`,
+    `/api/bands/${bandId}/members/${bob.id}`,
     alice,
     { role: 'owner' },
   );
@@ -188,13 +188,13 @@ async function main() {
   // 13. Alice now leaves → 204
   const aliceLeave2 = await call(
     'DELETE',
-    `/bands/${bandId}/members/${alice.id}`,
+    `/api/bands/${bandId}/members/${alice.id}`,
     alice,
   );
   expect('alice can leave (not last owner)', aliceLeave2.status === 204, aliceLeave2);
 
   // 14. Alice list → no longer has the band
-  const listA2 = await call('GET', '/bands', alice);
+  const listA2 = await call('GET', '/api/bands', alice);
   expect(
     'alice list no longer contains band',
     !(listA2.body as { id: string }[]).some((b) => b.id === bandId),
@@ -202,15 +202,15 @@ async function main() {
   );
 
   // 15. Carol (not a member) tries to delete band → 403
-  const carolDel = await call('DELETE', `/bands/${bandId}`, carol);
+  const carolDel = await call('DELETE', `/api/bands/${bandId}`, carol);
   expect('outsider delete 403', carolDel.status === 403, carolDel);
 
   // 16. Bob (sole owner) deletes the band → 204
-  const bobDel = await call('DELETE', `/bands/${bandId}`, bob);
+  const bobDel = await call('DELETE', `/api/bands/${bandId}`, bob);
   expect('owner delete 204', bobDel.status === 204, bobDel);
 
   // 17. Subsequent GET → 403 (assertMember runs first; band gone → 404)
-  const after = await call('GET', `/bands/${bandId}`, bob);
+  const after = await call('GET', `/api/bands/${bandId}`, bob);
   expect('after delete band gone', after.status === 404, after);
 
   console.log(`\n${pass} passed, ${fail} failed`);

@@ -21,7 +21,7 @@ describe('S1-1: SVG upload blocked (stored XSS prevention)', () => {
   it('rejects SVG upload with 400 even when authenticated', async () => {
     const { token } = makeTestToken();
     const res = await request(app)
-      .post('/attachments/images')
+      .post('/api/attachments/images')
       .set('Authorization', `Bearer ${token}`)
       .attach('file', SVG_CONTENT, { filename: 'evil.svg', contentType: 'image/svg+xml' });
     expect(res.status).toBe(400);
@@ -30,7 +30,7 @@ describe('S1-1: SVG upload blocked (stored XSS prevention)', () => {
   it('rejects SVG disguised as image/octet-stream with 400 when authenticated', async () => {
     const { token } = makeTestToken();
     const res = await request(app)
-      .post('/attachments/images')
+      .post('/api/attachments/images')
       .set('Authorization', `Bearer ${token}`)
       .attach('file', SVG_CONTENT, { filename: 'evil.svg', contentType: 'application/octet-stream' });
     expect(res.status).toBe(400);
@@ -38,7 +38,7 @@ describe('S1-1: SVG upload blocked (stored XSS prevention)', () => {
 
   it('rejects SVG upload without auth with 401 (auth gate active)', async () => {
     const res = await request(app)
-      .post('/attachments/images')
+      .post('/api/attachments/images')
       .attach('file', SVG_CONTENT, { filename: 'evil.svg', contentType: 'image/svg+xml' });
     // 401 because S1-3 makes auth run before multer; if somehow bypassed, SVG is still blocked at MIME layer
     expect(res.status).toBe(401);
@@ -47,7 +47,7 @@ describe('S1-1: SVG upload blocked (stored XSS prevention)', () => {
   it('rejects SVG with .svg extension and octet-stream even when authenticated', async () => {
     const { token } = makeTestToken();
     const res = await request(app)
-      .post('/attachments/images')
+      .post('/api/attachments/images')
       .set('Authorization', `Bearer ${token}`)
       .attach('file', SVG_CONTENT, { filename: 'tricky.svg', contentType: 'application/octet-stream' });
     expect(res.status).toBe(400);
@@ -55,7 +55,7 @@ describe('S1-1: SVG upload blocked (stored XSS prevention)', () => {
 
   it('valid PNG without auth returns 401 — not 400 (auth runs before MIME check)', async () => {
     const res = await request(app)
-      .post('/attachments/images')
+      .post('/api/attachments/images')
       .attach('file', VALID_PNG, { filename: 'photo.png', contentType: 'image/png' });
     expect(res.status).toBe(401);
   });

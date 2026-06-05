@@ -65,7 +65,7 @@ async function main() {
   const carol = await makeUser('Carol');
 
   // Setup: create a band owned by Alice
-  const bandRes = await call('POST', '/bands', alice, {
+  const bandRes = await call('POST', '/api/bands', alice, {
     name: 'EventBand',
     description: 'for events smoke',
   });
@@ -73,11 +73,11 @@ async function main() {
   expect('setup band', bandRes.status === 201);
 
   // 1. Non-member lists events → 403
-  const r403 = await call('GET', `/bands/${bandId}/events`, carol);
+  const r403 = await call('GET', `/api/bands/${bandId}/events`, carol);
   expect('non-member list 403', r403.status === 403, r403);
 
   // 2. Member creates event with setlist (no ids)
-  const create = await call('POST', `/bands/${bandId}/events`, alice, {
+  const create = await call('POST', `/api/bands/${bandId}/events`, alice, {
     title: 'Rehearsal',
     date: '2026-04-25',
     type: 'practice',
@@ -111,7 +111,7 @@ async function main() {
   const item1Id = ev.setlist[1].id;
 
   // 3. List events
-  const listRes = await call('GET', `/bands/${bandId}/events`, alice);
+  const listRes = await call('GET', `/api/bands/${bandId}/events`, alice);
   expect(
     'list contains created event',
     listRes.status === 200 &&
@@ -123,7 +123,7 @@ async function main() {
   // 4. Date range — outside the event date returns empty
   const outside = await call(
     'GET',
-    `/bands/${bandId}/events?from=2027-01-01&to=2027-12-31`,
+    `/api/bands/${bandId}/events?from=2027-01-01&to=2027-12-31`,
     alice,
   );
   expect(
@@ -135,7 +135,7 @@ async function main() {
   // 5. Date range — covering the event date returns it
   const inside = await call(
     'GET',
-    `/bands/${bandId}/events?from=2026-04-01&to=2026-04-30`,
+    `/api/bands/${bandId}/events?from=2026-04-01&to=2026-04-30`,
     alice,
   );
   expect(
@@ -146,13 +146,13 @@ async function main() {
   );
 
   // 6. Get single event
-  const detail = await call('GET', `/bands/${bandId}/events/${ev.id}`, alice);
+  const detail = await call('GET', `/api/bands/${bandId}/events/${ev.id}`, alice);
   expect('get single event', detail.status === 200, detail);
 
   // 7. PATCH setlist: keep item0 by id, drop item1, add a new song
   const patch = await call(
     'PATCH',
-    `/bands/${bandId}/events/${ev.id}`,
+    `/api/bands/${bandId}/events/${ev.id}`,
     alice,
     {
       setlist: [
@@ -179,7 +179,7 @@ async function main() {
   );
 
   // 8. Invalid type → 422 from Tsoa validator
-  const badType = await call('POST', `/bands/${bandId}/events`, alice, {
+  const badType = await call('POST', `/api/bands/${bandId}/events`, alice, {
     title: 'Bad',
     date: '2026-05-01',
     type: 'gig',
@@ -187,7 +187,7 @@ async function main() {
   expect('invalid event type rejected', badType.status === 422, badType);
 
   // 9. Non-member tries to create → 403
-  const carolCreate = await call('POST', `/bands/${bandId}/events`, carol, {
+  const carolCreate = await call('POST', `/api/bands/${bandId}/events`, carol, {
     title: 'Sneaky',
     date: '2026-05-01',
     type: 'practice',
@@ -195,11 +195,11 @@ async function main() {
   expect('non-member create 403', carolCreate.status === 403, carolCreate);
 
   // 10. Delete event
-  const del = await call('DELETE', `/bands/${bandId}/events/${ev.id}`, alice);
+  const del = await call('DELETE', `/api/bands/${bandId}/events/${ev.id}`, alice);
   expect('delete event 204', del.status === 204, del);
 
   // 11. Get deleted event → 404
-  const after = await call('GET', `/bands/${bandId}/events/${ev.id}`, alice);
+  const after = await call('GET', `/api/bands/${bandId}/events/${ev.id}`, alice);
   expect('deleted event 404', after.status === 404, after);
 
   console.log(`\n${pass} passed, ${fail} failed`);

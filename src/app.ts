@@ -109,31 +109,34 @@ const uploadLimiter = rateLimit({
   message: { message: 'Upload rate limit exceeded.' },
 });
 
-app.use('/auth', authLimiter);
-app.use('/bands/join', joinLimiter);
-app.use('/attachments', uploadLimiter);
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const uploadsDir = path.resolve(process.cwd(), 'uploads');
 fs.mkdirSync(uploadsDir, { recursive: true });
-// Static file serving removed — use GET /attachments/:id (requires JWT)
-
-app.post('/attachments/images', requireJwt, imageUpload.single('file'), verifyImageMime);
-app.post('/attachments/files',  requireJwt, fileUpload.single('file'),  verifyFileMime);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
-if (process.env.NODE_ENV !== 'production') {
-  app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-}
-
 app.use('/admin', adminRouter);
 
-RegisterRoutes(app);
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+}
+
+const apiRouter = express.Router();
+
+apiRouter.use('/auth', authLimiter);
+apiRouter.use('/bands/join', joinLimiter);
+apiRouter.use('/attachments', uploadLimiter);
+
+// Static file serving removed — use GET /api/attachments/:id (requires JWT)
+apiRouter.post('/attachments/images', requireJwt, imageUpload.single('file'), verifyImageMime);
+apiRouter.post('/attachments/files',  requireJwt, fileUpload.single('file'),  verifyFileMime);
+
+RegisterRoutes(apiRouter);
+app.use('/api', apiRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

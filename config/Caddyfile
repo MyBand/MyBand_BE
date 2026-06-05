@@ -1,0 +1,16 @@
+myband.codie.kr {
+    # Forward /api/* to the backend container (TLS handled automatically by Caddy)
+    handle /api/* {
+        reverse_proxy localhost:3000
+    }
+
+    # Forward /admin/* to the backend (restrict access at the network/firewall level)
+    handle /admin/* {
+        reverse_proxy localhost:3000
+    }
+
+    # Health check endpoint used by Docker
+    handle /health {
+        reverse_proxy localhost:3000
+    }
+}
